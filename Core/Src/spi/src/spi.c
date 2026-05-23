@@ -11,15 +11,21 @@ spi_status_t spi_receive_packet(SPI_HandleTypeDef* hspi,
                                 uint16_t data_buf_size, uint32_t timeout_ms) {
     uint8_t byte;
     uint32_t start = HAL_GetTick();
+    uint8_t buffer[100] = {0};
 
-    do {
-        if (HAL_SPI_Receive(hspi, &byte, 1, SPI_BYTE_TIMEOUT_MS) != HAL_OK)
-        	continue;
+    HAL_SPI_Receive(hspi, buffer, 100, SPI_BYTE_TIMEOUT_MS);
+//
+//    do {
+//        if (HAL_SPI_Receive(hspi, &byte, 1, SPI_BYTE_TIMEOUT_MS) != HAL_OK)
+//        	continue;
+//
+//        if (HAL_GetTick() - start > timeout_ms)
+//        	return SPI_ERR_TIMEDOUT; // we waited and waited and waited and nothing came :(
+//
+//    } while (byte != SPI_PACKET_START_BYTE);
 
-        if (HAL_GetTick() - start > timeout_ms)
-        	return SPI_ERR_TIMEDOUT; // we waited and waited and waited and nothing came :(
-
-    } while (byte != SPI_PACKET_START_BYTE);
+    log_as_bytes(buffer, 100);
+    return 0;
 
     if (HAL_SPI_Receive(hspi, &byte, 1, SPI_BYTE_TIMEOUT_MS) != HAL_OK)
         return SPI_ERR_HAL;

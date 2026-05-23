@@ -1,4 +1,4 @@
 /Users/sid/STM32_Stuff/apss_spi/Core/Src/spi/include/spi.h:36:20:spi_cs_low	1
 /Users/sid/STM32_Stuff/apss_spi/Core/Src/spi/include/spi.h:40:20:spi_cs_high	1
-../Core/Src/spi/src/spi.c:8:14:spi_receive_packet	15
-../Core/Src/spi/src/spi.c:73:14:spi_transaction	3
+../Core/Src/spi/src/spi.c:8:14:spi_receive_packet	1
+../Core/Src/spi/src/spi.c:79:14:spi_transaction	3
