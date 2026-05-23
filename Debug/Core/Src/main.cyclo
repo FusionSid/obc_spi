@@ -1,6 +1,6 @@
 /Users/sid/STM32_Stuff/apss_spi/Core/Src/spi/include/spi.h:70:27:spi_status_to_string	7
 ../Core/Src/main.c:73:5:main	2
-../Core/Src/main.c:171:6:SystemClock_Config	4
-../Core/Src/main.c:231:13:MX_SPI1_Init	3
-../Core/Src/main.c:295:13:MX_GPIO_Init	1
-../Core/Src/main.c:331:6:Error_Handler	1
+../Core/Src/main.c:177:6:SystemClock_Config	4
+../Core/Src/main.c:237:13:MX_SPI1_Init	3
+../Core/Src/main.c:301:13:MX_GPIO_Init	1
+../Core/Src/main.c:337:6:Error_Handler	1

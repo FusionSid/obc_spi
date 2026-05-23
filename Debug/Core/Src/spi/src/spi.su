@@ -1,4 +1,4 @@
 /Users/sid/STM32_Stuff/apss_spi/Core/Src/spi/include/spi.h:36:20:spi_cs_low	8	static
 /Users/sid/STM32_Stuff/apss_spi/Core/Src/spi/include/spi.h:40:20:spi_cs_high	8	static
-../Core/Src/spi/src/spi.c:8:14:spi_receive_packet	6920	static
-../Core/Src/spi/src/spi.c:79:14:spi_transaction	6816	static
+../Core/Src/spi/src/spi.c:9:14:spi_receive_packet	6848	static
+../Core/Src/spi/src/spi.c:87:14:spi_transaction	6816	static
