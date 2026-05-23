@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/Users/sid/STM32_Stuff/apss_spi/build/Debug/cmake_install.cmake",
-		"/Users/sid/STM32_Stuff/apss_spi/build/Debug/cmake/stm32cubemx/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

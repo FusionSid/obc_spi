@@ -1,2 +1,0 @@
-../Core/Src/spi/src/packet.c:9:6:spi_packet_build	7
-../Core/Src/spi/src/packet.c:41:10:spi_packet_crc16	4
