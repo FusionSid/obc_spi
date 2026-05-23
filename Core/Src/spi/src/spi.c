@@ -83,6 +83,8 @@ spi_status_t spi_transaction(SPI_HandleTypeDef* hspi, spi_query_code_t query_cod
 
     spi_cs_low();
 
+    log_as_bytes(tx_buf, tx_buf_len);
+
     // maybe use inturupts but idk yet
     if (HAL_SPI_Transmit(hspi, tx_buf, tx_buf_len, timeout_ms) != HAL_OK) {
         spi_cs_high();

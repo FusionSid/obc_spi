@@ -27,5 +27,5 @@ void log_as_bytes(uint8_t *data, int size) {
     	log_text(buffer);
     }
 
-    log_text("\n");
+    log_text("\r\n");
 }
