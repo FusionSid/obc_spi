@@ -236,7 +236,23 @@ static void MX_SPI1_Init(void)
   /* USER CODE END SPI1_Init 0 */
 
   /* USER CODE BEGIN SPI1_Init 1 */
-
+  /* Configure PLL3P = 32 MHz (HSI 64 / PLLM 4 * PLLN 10 / PLLP 5)
+   * so that SPI1 kernel clock = PLL3P / 256 = 125 kHz */
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI123;
+  PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
+  PeriphClkInitStruct.PLL3.PLL3M = 4;
+  PeriphClkInitStruct.PLL3.PLL3N = 10;
+  PeriphClkInitStruct.PLL3.PLL3P = 5;
+  PeriphClkInitStruct.PLL3.PLL3Q = 1;
+  PeriphClkInitStruct.PLL3.PLL3R = 2;
+  PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
+  PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOMEDIUM;
+  PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE END SPI1_Init 1 */
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
