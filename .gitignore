@@ -1,0 +1,28 @@
+# --- Build Artifacts ---
+Debug/
+Release/
+bin/
+obj/
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.o
+*.d
+*.su
+
+# --- IDE Specific (STM32CubeIDE/Eclipse) ---
+.settings/
+.metadata/
+*.launch
+*.jlink
+*.log
+
+# --- Tool-Generated Files ---
+# STM32CubeMX generated (optional: keep .ioc to recreate)
+# MXTmpFiles/
+
+# --- Operating System Files ---
+.DS_Store
+Thumbs.db
