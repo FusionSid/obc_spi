@@ -1,0 +1,2 @@
+../Core/Src/spi/src/test_payload.c:5:14:query_ack	48	static
+../Core/Src/spi/src/test_payload.c:18:14:query_echo	120	static
