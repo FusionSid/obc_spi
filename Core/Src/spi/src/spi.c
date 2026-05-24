@@ -5,7 +5,7 @@
 #include "log.h"
 #include "packet.h"
 
-spi_status_t spi_receive_packet(SPI_HandleTypeDef *hspi, spi_query_code_t *query_out, uint8_t *data_out,
+spi_status_t spi_receive_packet(SPI_HandleTypeDef *hspi, uint8_t *data_out,
                                 uint16_t *data_length_out, uint16_t data_buf_size, uint32_t timeout_ms) {
 
     uint8_t byte;
@@ -57,14 +57,13 @@ spi_status_t spi_receive_packet(SPI_HandleTypeDef *hspi, spi_query_code_t *query
     uint16_t computed_crc = spi_packet_crc16(tmp, SPI_PACKET_START_SIZE + data_length);
     if (computed_crc != received_crc) return SPI_ERR_CRCBAD;
 
-    if (query_out) *query_out = query;
     if (data_length_out) *data_length_out = data_length;
 
     return SPI_WORKED;
 }
 
 spi_status_t spi_transaction(SPI_HandleTypeDef *hspi, spi_query_code_t query_code, const uint8_t *sending_data,
-                             uint16_t sending_data_length, spi_query_code_t *recieved_query, uint8_t *recieved_data,
+                             uint16_t sending_data_length, uint8_t *recieved_data,
                              uint16_t *recieved_data_length, uint16_t recieving_buffer_size, uint32_t timeout_ms) {
     uint8_t tx_buf[SPI_PACKET_MAX_SIZE];
     uint16_t tx_buf_len = SPI_PACKET_START_AND_END_SIZE + sending_data_length;
@@ -81,7 +80,7 @@ spi_status_t spi_transaction(SPI_HandleTypeDef *hspi, spi_query_code_t query_cod
         return SPI_ERR_HAL;
     }
 
-    spi_status_t status = spi_receive_packet(hspi, recieved_query, recieved_data, recieved_data_length,
+    spi_status_t status = spi_receive_packet(hspi, recieved_data, recieved_data_length,
                                              recieving_buffer_size, timeout_ms);
 
     spi_cs_high();
