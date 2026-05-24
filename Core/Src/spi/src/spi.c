@@ -12,10 +12,6 @@ spi_status_t spi_receive_packet(SPI_HandleTypeDef* hspi,
                                 uint16_t data_buf_size, uint32_t timeout_ms) {
     uint8_t byte;
     uint32_t start = HAL_GetTick();
-//    uint8_t buffer[100] = {0};
-
-//    HAL_SPI_Receive(hspi, buffer, 100, SPI_BYTE_TIMEOUT_MS);
-//    return 0;
 
     do {
         if (HAL_SPI_Receive(hspi, &byte, 1, SPI_BYTE_TIMEOUT_MS) != HAL_OK)
@@ -25,9 +21,6 @@ spi_status_t spi_receive_packet(SPI_HandleTypeDef* hspi,
         	return SPI_ERR_TIMEDOUT; // we waited and waited and waited and nothing came :(
 
     } while (byte != SPI_PACKET_START_BYTE);
-
-//    log_as_bytes(buffer, 100);
-//    return 0;
 
     if (HAL_SPI_Receive(hspi, &byte, 1, SPI_BYTE_TIMEOUT_MS) != HAL_OK)
         return SPI_ERR_HAL;
@@ -43,7 +36,6 @@ spi_status_t spi_receive_packet(SPI_HandleTypeDef* hspi,
 
 
     // the buffer isnt big enough to store what we recieve
-
     if (data_length > data_buf_size) {
     	char buffer[16];
     	sprintf(buffer, "%u %u\n", (unsigned int)data_length, (unsigned int)data_buf_size);

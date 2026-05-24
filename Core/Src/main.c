@@ -97,7 +97,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-//  cs_high(); // should be at the start
+  cs_high();
   /* USER CODE END 2 */
 
   /* Initialize leds */
@@ -127,45 +127,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-//	  log_text("Sending Data\n");
-//	  const uint8_t data2[] = {0xD8,0x67};
-//	  cs_low();
-//	  HAL_SPI_Transmit(&hspi1, data2, 1, 100);
-//	  cs_high();
-
-//	  cs_low();
-//	  HAL_Delay(1); // temporary test
-//	  HAL_SPI_Transmit(&hspi1, data2, 2, 100);
-//	  HAL_Delay(1);
-//	  cs_high();
-
-//	  uint8_t data[] = {0x67, 0x67};
-//	  spi_query_echo(&hspi1, data, 2);
-//
-////	  spi_query_ack(&hspi1)
-//
-////	  uint8_t echo_data[] = {0x67, 0x67, 0x67, 0x67};
-////	  spi_query_echo(&hspi1, echo_data, sizeof(echo_data));
-
 	  char buffer[32];
+
 	  sprintf(buffer, "SENDING ACK, Code: %s\r\n", spi_status_to_string(query_ack(&hspi1)));
 	  log_text(buffer);
-
 	  HAL_Delay(1000);
 
 	  sprintf(buffer, "SENDING ECHO, Code: %s\r\n", spi_status_to_string(query_echo(&hspi1)));
 	  log_text(buffer);
-
 	  HAL_Delay(1000);
 
 
 	  sprintf(buffer, "SENDING RTD, Code: %s\r\n", spi_status_to_string(query_getRTD(&hspi1)));
 	  log_text(buffer);
-
 	  HAL_Delay(1000);
-//	  spi_query_ack(&hspi1);
-//	  HAL_Delay(5000);
   }
   /* USER CODE END 3 */
 }

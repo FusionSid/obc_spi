@@ -28,10 +28,6 @@ bool spi_packet_build(uint8_t* packet_out, spi_query_code_t query,
         spi_packet_crc16(packet_out, SPI_PACKET_START_SIZE + data_length);
     uint16_t crc_index = SPI_PACKET_START_SIZE + data_length;
 
-    char buffer[32];
-    sprintf(buffer, "CRC: %u \r\n", (unsigned int) crc);
-    log_text(buffer);
-
     packet_out[crc_index] = (uint8_t)(crc & 0xFF);
     packet_out[crc_index + 1] = (uint8_t)((crc >> 8) & 0xFF);
 
