@@ -123,21 +123,16 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        char buffer[32];
-
-        sprintf(buffer, "SENDING ACK, Code: %s\r\n", spi_status_to_string(query_ack(&hspi1)));
-        log_text(buffer);
+        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(query_ack(&hspi1)));
         HAL_Delay(1000);
 
-        sprintf(buffer, "SENDING ECHO, Code: %s\r\n", spi_status_to_string(query_echo(&hspi1)));
-        log_text(buffer);
+        log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(query_echo(&hspi1)));
         HAL_Delay(1000);
 
-        sprintf(buffer, "SENDING RTD, Code: %s\r\n", spi_status_to_string(query_getRTD(&hspi1)));
-        log_text(buffer);
+        log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(query_getRTD(&hspi1)));
         HAL_Delay(1000);
+        /* USER CODE END 3 */
     }
-    /* USER CODE END 3 */
 }
 
 /**

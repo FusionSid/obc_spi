@@ -4,7 +4,6 @@
 
 #include "log.h"
 #include "packet.h"
-#include <stdio.h>
 
 spi_status_t spi_receive_packet(SPI_HandleTypeDef *hspi, spi_query_code_t *query_out, uint8_t *data_out,
                                 uint16_t *data_length_out, uint16_t data_buf_size, uint32_t timeout_ms) {
@@ -32,9 +31,6 @@ spi_status_t spi_receive_packet(SPI_HandleTypeDef *hspi, spi_query_code_t *query
 
     // the buffer isnt big enough to store what we recieve
     if (data_length > data_buf_size) {
-        char buffer[16];
-        sprintf(buffer, "%u %u\n", (unsigned int)data_length, (unsigned int)data_buf_size);
-        log_text(buffer);
         return SPI_ERR_OVERFLOW;
     }
 
