@@ -1,0 +1,14 @@
+{
+    "C_Cpp.intelliSenseEngine": "disabled",
+
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/Debug",
+        "--query-driver=/Applications/STM32CubeIDE.app/**/arm-none-eabi-gcc",
+        "--background-index",
+        "--completion-style=detailed",
+        "--header-insertion=never",
+        "--clang-tidy"
+    ],
+
+    "editor.formatOnSave": true
+}
