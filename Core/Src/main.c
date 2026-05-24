@@ -24,7 +24,6 @@
 #include "log.h"
 #include "spi.h"
 #include "test_payload.h"
-#include <stdint.h>
 
 /* USER CODE END Includes */
 
@@ -97,7 +96,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  cs_high();
+  spi_cs_high();
   /* USER CODE END 2 */
 
   /* Initialize leds */
