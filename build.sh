@@ -11,7 +11,7 @@ cd "$BUILD_DIR"
 
 rm -f compile_commands.json
 
-bear -- make -j7 --silent all
+bear -- make -j7 all
 
 sed -i '' 's/-fcyclomatic-complexity//g' compile_commands.json
 
