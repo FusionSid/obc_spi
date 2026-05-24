@@ -26,3 +26,5 @@ obj/
 # --- Operating System Files ---
 .DS_Store
 Thumbs.db
+compile_commands.json
+.cache/
