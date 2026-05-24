@@ -1,0 +1,17 @@
+BreakBeforeBraces: Attach
+ColumnLimit: 120
+
+AlignConsecutiveDeclarations: None
+
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+
+BinPackArguments: true
+BinPackParameters: true
+
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
