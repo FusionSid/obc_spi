@@ -6,7 +6,7 @@
 
 #define CS_Pin GPIO_PIN_14
 #define CS_GPIO_Port GPIOD
-#define SPI_TIMEOUT_MS 1000
+#define SPI_TIMEOUT_MS 100
 #define SPI_BYTE_TIMEOUT_MS 50
 
 #define QUERY_LIST                                                                                                     \

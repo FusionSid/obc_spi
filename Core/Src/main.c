@@ -124,13 +124,19 @@ int main(void) {
 
         /* USER CODE BEGIN 3 */
         log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(query_ack(&hspi1)));
-        HAL_Delay(1000);
+        HAL_Delay(500);
 
         log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(query_echo(&hspi1)));
-        HAL_Delay(1000);
+        HAL_Delay(500);
 
         log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(query_getRTD(&hspi1)));
-        HAL_Delay(1000);
+        HAL_Delay(500);
+
+        log_printf("SENDING ADC, Code: %s\r\n", spi_status_to_string(query_getADC(&hspi1)));
+        HAL_Delay(500);
+
+        log_printf("SENDING RTC, Code: %s\r\n", spi_status_to_string(query_getRTC(&hspi1)));
+        HAL_Delay(500);
         /* USER CODE END 3 */
     }
 }
