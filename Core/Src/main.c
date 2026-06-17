@@ -21,10 +21,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "log.h"
-#include "spi.h"
-#include "test_payload.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,7 +91,6 @@ int main(void) {
     MX_GPIO_Init();
     MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-    spi_cs_high();
     /* USER CODE END 2 */
 
     /* Initialize leds */
@@ -123,20 +118,6 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(query_ack(&hspi1)));
-        HAL_Delay(500);
-
-        log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(query_echo(&hspi1)));
-        HAL_Delay(500);
-
-        log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(query_getRTD(&hspi1)));
-        HAL_Delay(500);
-
-        log_printf("SENDING ADC, Code: %s\r\n", spi_status_to_string(query_getADC(&hspi1)));
-        HAL_Delay(500);
-
-        log_printf("SENDING RTC, Code: %s\r\n", spi_status_to_string(query_getRTC(&hspi1)));
-        HAL_Delay(500);
         /* USER CODE END 3 */
     }
 }
