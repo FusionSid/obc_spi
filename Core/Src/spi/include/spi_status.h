@@ -6,6 +6,7 @@
     X(SPI_ERR_TIMEDOUT)                                                                                                \
     X(SPI_ERR_CRCBAD)                                                                                                  \
     X(SPI_ERR_OVERFLOW)                                                                                                \
+    X(SPI_ERR_NOT_INITALISED)                                                                                            \
     X(SPI_ERR_INVALID_ARGS)                                                                                            \
     X(SPI_ERR_BUILD_FAIL)
 

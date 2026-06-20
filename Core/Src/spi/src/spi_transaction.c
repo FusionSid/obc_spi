@@ -2,7 +2,7 @@
 #include "spi_packet.h"
 #include "string.h"
 
-static spi_status_t transport_receive_packet(spi_handle_t *spi, uint8_t *packet_buffer, uint16_t *packet_length_out,
+static spi_status_t transport_receive_packet(uint8_t *packet_buffer, uint16_t *packet_length_out,
                                              uint32_t timeout_ms) {
     uint8_t byte;
     uint32_t start_time = HAL_GetTick();
@@ -11,19 +11,19 @@ static spi_status_t transport_receive_packet(spi_handle_t *spi, uint8_t *packet_
         if ((HAL_GetTick() - start_time) > timeout_ms)
             return SPI_ERR_TIMEDOUT; // we waited and waited and waited and nothing came :(
 
-        if (spi_recieve_byte(spi, &byte) != SPI_WORKED) continue;
+        if (spi_recieve_byte(&byte) != SPI_WORKED) continue;
     } while (byte != SPI_PACKET_START_BYTE);
 
     packet_buffer[0] = byte;
 
-    if (spi_recieve_byte(spi, &packet_buffer[1]) != SPI_WORKED) {
+    if (spi_recieve_byte(&packet_buffer[1]) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
 
     uint8_t len_low;
     uint8_t len_high;
 
-    if (spi_recieve_byte(spi, &len_low) != SPI_WORKED || spi_recieve_byte(spi, &len_high) != SPI_WORKED) {
+    if (spi_recieve_byte(&len_low) != SPI_WORKED || spi_recieve_byte(&len_high) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
 
@@ -35,12 +35,12 @@ static spi_status_t transport_receive_packet(spi_handle_t *spi, uint8_t *packet_
         return SPI_ERR_OVERFLOW;
     }
 
-    if (spi_recieve(spi, &packet_buffer[SPI_PACKET_HEADER_SIZE], data_length) != SPI_WORKED) {
+    if (spi_recieve(&packet_buffer[SPI_PACKET_HEADER_SIZE], data_length) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
 
     uint16_t crc_index = SPI_PACKET_HEADER_SIZE + data_length;
-    if (spi_recieve(spi, &packet_buffer[crc_index], SPI_PACKET_FOOTER_SIZE) != SPI_WORKED) {
+    if (spi_recieve(&packet_buffer[crc_index], SPI_PACKET_FOOTER_SIZE) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
 
@@ -49,7 +49,7 @@ static spi_status_t transport_receive_packet(spi_handle_t *spi, uint8_t *packet_
     return SPI_WORKED;
 }
 
-spi_status_t spi_transaction(spi_handle_t *spi, const spi_cs_config_t *cs, uint8_t query, const uint8_t *tx_data,
+spi_status_t spi_transaction(const spi_cs_config_t *cs, uint8_t query, const uint8_t *tx_data,
                              uint16_t tx_length, uint8_t *rx_data, uint16_t rx_buffer_size, uint16_t *rx_length_out,
                              uint32_t timeout_ms) {
     uint8_t tx_packet[SPI_PACKET_MAX_PACKET_SIZE];
@@ -67,13 +67,13 @@ spi_status_t spi_transaction(spi_handle_t *spi, const spi_cs_config_t *cs, uint8
 
     spi_device_select(cs); // pull the line to low
 
-    status = spi_send(spi, tx_packet, tx_packet_length);
+    status = spi_send(tx_packet, tx_packet_length);
     if (status != SPI_WORKED) {
         spi_device_deselect(cs);
         return status;
     }
 
-    status = transport_receive_packet(spi, rx_packet, &received_packet_length, timeout_ms);
+    status = transport_receive_packet(rx_packet, &received_packet_length, timeout_ms);
     spi_device_deselect(cs);
     if (status != SPI_WORKED) {
         return status;

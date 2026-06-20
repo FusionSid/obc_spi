@@ -82,8 +82,7 @@ int main(void) {
     HAL_Init();
 
     /* USER CODE BEGIN Init */
-    spi_handle_t handle = {0};
-    spi_init(&handle, &hspi1, TX_TIMEOUT, RX_TIMEOUT);
+    spi_init(&hspi1, TX_TIMEOUT, RX_TIMEOUT);
     /* USER CODE END Init */
 
     /* Configure the system clock */
@@ -101,9 +100,6 @@ int main(void) {
         .cs_pin = GPIO_PIN_14,
         .cs_port = GPIOD,
     };
-
-    spi_handle_t spi_handle = {0};
-    spi_init(&spi_handle, &hspi1, 1000, 1000);
     /* USER CODE END 2 */
 
     /* Initialize leds */
@@ -131,15 +127,13 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(thermal_query_ack(&spi_handle, &thermal_config)));
+        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(thermal_query_ack(&thermal_config)));
         HAL_Delay(1000);
 
-        log_printf("SENDING ECHO, Code: %s\r\n",
-                   spi_status_to_string(thermal_query_echo(&spi_handle, &thermal_config)));
+        log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(thermal_query_echo(&thermal_config)));
         HAL_Delay(1000);
 
-        log_printf("SENDING RTD, Code: %s\r\n",
-                   spi_status_to_string(thermal_query_get_rtd(&spi_handle, &thermal_config)));
+        log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(thermal_query_get_rtd(&thermal_config)));
         HAL_Delay(1000);
         /* USER CODE END 3 */
     }
