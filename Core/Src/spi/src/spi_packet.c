@@ -20,7 +20,7 @@ spi_status_t spi_packet_build(uint8_t *packet_out, uint8_t query, const uint8_t 
     packet_out[SPI_PACKET_OFFSET_LEN_L] = (uint8_t)(data_length & 0xFF);
     packet_out[SPI_PACKET_OFFSET_LEN_H] = (uint8_t)((data_length >> 8) & 0xFF);
 
-    if (data_length > 0 && data != NULL) {
+    if (data_length > 0) {
         memcpy(&packet_out[SPI_PACKET_HEADER_SIZE], data, data_length);
     }
 
@@ -40,6 +40,10 @@ spi_status_t spi_packet_parse(const uint8_t *raw_packet, uint16_t raw_packet_len
 
     if (raw_packet_length < (SPI_PACKET_HEADER_SIZE + SPI_PACKET_FOOTER_SIZE)) {
         return SPI_ERR_OVERFLOW;
+    }
+
+    if (raw_packet[SPI_PACKET_OFFSET_START] != SPI_PACKET_START_BYTE) {
+        return SPI_ERR_INVALID_ARGS;
     }
 
     uint16_t data_length =
