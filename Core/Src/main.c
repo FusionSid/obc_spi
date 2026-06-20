@@ -97,6 +97,13 @@ int main(void) {
     MX_GPIO_Init();
     MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
+    spi_cs_config_t thermal_config = {
+        .cs_pin = GPIO_PIN_14,
+        .cs_port = GPIOD,
+    };
+
+    spi_handle_t spi_handle = {0};
+    spi_init(&spi_handle, &hspi1, 1000, 1000);
     /* USER CODE END 2 */
 
     /* Initialize leds */
@@ -124,14 +131,6 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        spi_cs_config_t thermal_config = {
-            .cs_pin = GPIO_PIN_14,
-            .cs_port = GPIOD,
-        };
-
-        spi_handle_t spi_handle = {0};
-        spi_init(&spi_handle, &hspi1, 1000, 1000);
-
         log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(thermal_query_ack(&spi_handle, &thermal_config)));
         HAL_Delay(1000);
 

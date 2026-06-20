@@ -8,9 +8,9 @@
 
 #define SPI_PACKET_HEADER_SIZE 4      // start byte + query + 2 for length
 #define SPI_PACKET_FOOTER_SIZE 2      // crc
-#define SPI_PACKET_MAX_DATA_SIZE 6767 // probably change to smth more reasonable later
+#define SPI_PACKET_MAX_DATA_SIZE 67 // probably change to smth more reasonable later
 
-#define SPI_PACKET_MAX_PACKET_SIZE SPI_PACKET_HEADER_SIZE + SPI_PACKET_MAX_DATA_SIZE + SPI_PACKET_FOOTER_SIZE
+#define SPI_PACKET_MAX_PACKET_SIZE (SPI_PACKET_HEADER_SIZE + SPI_PACKET_MAX_DATA_SIZE + SPI_PACKET_FOOTER_SIZE)
 
 // start and crc dont really need to be included here
 typedef struct {
