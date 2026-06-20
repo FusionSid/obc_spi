@@ -8,7 +8,7 @@
 #define SPI_PACKET_OFFSET_LEN_L 2
 #define SPI_PACKET_OFFSET_LEN_H 3
 
-spi_status_t spi_packet_build(uint8_t *packet_out, uint8_t query, const uint8_t *data, uint16_t data_length) {
+spi_status_t spi_packet_build(uint8_t *packet_out, spi_query_code_t query, const uint8_t *data, uint16_t data_length) {
     if (packet_out == NULL || (data_length != 0 && data == NULL) ||
         (data_length > (SPI_PACKET_MAX_PACKET_SIZE - SPI_PACKET_HEADER_SIZE - SPI_PACKET_FOOTER_SIZE))) {
         return SPI_ERR_INVALID_ARGS;
