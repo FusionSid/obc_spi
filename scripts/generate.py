@@ -1,6 +1,7 @@
 import os
 import csv
 from typing import Final
+import subprocess
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -54,6 +55,8 @@ def main() -> None:
     output2_path = os.path.join(SCRIPT_DIR, "..", OUTPUT2_LOCATION)
     with open(output2_path, "w") as f:
         f.write(template2.render(queries=get_queries()))
+
+    subprocess.run(["clang-format", "-i", OUTPUT1_LOCATION, OUTPUT2_LOCATION])
 
 
 if __name__ == "__main__":
