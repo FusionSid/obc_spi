@@ -1,0 +1,60 @@
+#pragma once
+
+typedef enum { SPI_PAYLOAD_THERMAL, SPI_PAYLOAD_CAMERA, SPI_PAYLOAD_RADIATION } spi_payload_t;
+
+#define SPI_THERMAL_QUERY_LIST \
+{% for q in queries["THERMAL"] %}
+    X(SPI_THERMAL_QUERY_{{ q.command }}, {{ q.query_code }}) \
+{% endfor %}
+
+#define SPI_CAMERA_QUERY_LIST \
+{% for q in queries["CAMERA"] %}
+    X(SPI_CAMERA_QUERY_{{ q.command }}, {{ q.query_code }}) \
+{% endfor %}
+
+#define SPI_RADIATION_QUERY_LIST \
+{% for q in queries["RADIATION"] %}
+    X(SPI_RADIATION_QUERY_{{ q.command }}, {{ q.query_code }}) \
+{% endfor %}
+
+#define X(name, value) name = value,
+typedef enum { SPI_THERMAL_QUERY_LIST } spi_thermal_query_code_t;
+typedef enum { SPI_CAMERA_QUERY_LIST } spi_camera_query_code_t;
+typedef enum { SPI_RADIATION_QUERY_LIST } spi_radiation_query_code_t;
+#undef X
+
+static inline const char *spi_thermal_query_to_string(spi_thermal_query_code_t query) {
+    switch (query) {
+#define X(name, value)                                                                                                        \
+    case name:                                                                                                         \
+        return #name;
+        SPI_THERMAL_QUERY_LIST
+#undef X
+    default:
+        return "invalid query type";
+    }
+}
+
+static inline const char *spi_camera_query_to_string(spi_camera_query_code_t query) {
+    switch (query) {
+#define X(name, value)                                                                                                        \
+    case name:                                                                                                         \
+        return #name;
+        SPI_CAMERA_QUERY_LIST
+#undef X
+    default:
+        return "invalid query type";
+    }
+}
+
+static inline const char *spi_radiation_query_to_string(spi_radiation_query_code_t query) {
+    switch (query) {
+#define X(name, value)                                                                                                        \
+    case name:                                                                                                         \
+        return #name;
+        SPI_RADIATION_QUERY_LIST
+#undef X
+    default:
+        return "invalid query type";
+    }
+}
