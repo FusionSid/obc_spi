@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "log.h"
 #include "spi_hal.h"
+#include "spi_queries.h"
 #include "spi_thermal.h"
 
 /* USER CODE END Includes */
@@ -134,6 +135,20 @@ int main(void) {
         HAL_Delay(1000);
 
         log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(thermal_query_get_rtd(&thermal_config)));
+        HAL_Delay(1000);
+
+        uint8_t rx_data_ack[1];
+        uint16_t rx_length_ack;
+        spi_status_t status_ack = spi_thermal_query_acknowledge(&thermal_config, rx_data_ack, &rx_length_ack);
+        log_printf("SENDING ACK 2, Code: %s, Data: %x\r\n", spi_status_to_string(status_ack), rx_data_ack[0]);
+        HAL_Delay(1000);
+
+        uint8_t tx_data_echo[4] = {0x67, 0x67, 0x67, 0x67};
+        uint8_t rx_data_echo[4];
+        uint16_t rx_length_echo;
+        log_printf("SENDING ECHO 2, Code: %s\r\n",
+                   spi_thermal_query_echo(&thermal_config, tx_data_echo, rx_data_echo, &rx_length_echo));
+        log_as_bytes(rx_data_echo, rx_length_echo);
         HAL_Delay(1000);
         /* USER CODE END 3 */
     }

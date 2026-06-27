@@ -1,5 +1,6 @@
 #include "spi_thermal.h"
 #include "log.h"
+#include "spi_query.h"
 #include "spi_status.h"
 #include "spi_transaction.h"
 
@@ -9,7 +10,8 @@ spi_status_t thermal_query_ack(const spi_cs_config_t *cs) {
     uint8_t rx_data[1];
     uint16_t rx_length;
 
-    return spi_transaction(cs, QUERY_ACKNOWLEDGE, NULL, 0, rx_data, sizeof(rx_data), &rx_length, SPI_TIMEOUT_MS);
+    return spi_transaction(cs, SPI_THERMAL_QUERY_ACKNOWLEDGE, NULL, 0, rx_data, sizeof(rx_data), &rx_length,
+                           SPI_TIMEOUT_MS);
 }
 
 spi_status_t thermal_query_echo(const spi_cs_config_t *cs) {
@@ -18,8 +20,8 @@ spi_status_t thermal_query_echo(const spi_cs_config_t *cs) {
     uint8_t rx_data[sizeof(tx_data)];
     uint16_t rx_length;
 
-    spi_status_t status =
-        spi_transaction(cs, QUERY_ECHO, tx_data, sizeof(tx_data), rx_data, sizeof(rx_data), &rx_length, SPI_TIMEOUT_MS);
+    spi_status_t status = spi_transaction(cs, SPI_THERMAL_QUERY_ECHO, tx_data, sizeof(tx_data), rx_data,
+                                          sizeof(rx_data), &rx_length, SPI_TIMEOUT_MS);
 
     if (status != SPI_WORKED) {
         return status;
@@ -37,7 +39,7 @@ spi_status_t thermal_query_get_rtd(const spi_cs_config_t *cs) {
     uint16_t rx_length;
 
     spi_status_t status =
-        spi_transaction(cs, QUERY_RTD_DATA, NULL, 0, rx_data, sizeof(rx_data), &rx_length, SPI_TIMEOUT_MS);
+        spi_transaction(cs, SPI_THERMAL_QUERY_RTD_DATA, NULL, 0, rx_data, sizeof(rx_data), &rx_length, SPI_TIMEOUT_MS);
 
     if (status != SPI_WORKED) {
         return status;
