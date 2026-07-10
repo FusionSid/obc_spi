@@ -1,6 +1,11 @@
 #pragma once
 
-typedef enum { SPI_PAYLOAD_THERMAL, SPI_PAYLOAD_CAMERA, SPI_PAYLOAD_RADIATION } spi_payload_t;
+typedef enum {
+    SPI_PAYLOAD_THERMAL = 0x01,
+    SPI_PAYLOAD_RADIATION = 0x02,
+    SPI_PAYLOAD_CAMERA = 0x03,
+    SPI_DEVICE__COUNT
+} spi_payload_t;
 
 #define SPI_THERMAL_QUERY_LIST \
 {% for q in queries["THERMAL"] %}

@@ -22,9 +22,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "log.h"
-#include "spi_hal.h"
-#include "spi_queries.h"
 #include "spi_thermal.h"
+#include "spi_transaction.h"
+
 
 /* USER CODE END Includes */
 
@@ -35,8 +35,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TX_TIMEOUT 1000
-#define RX_TIMEOUT 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -83,7 +81,6 @@ int main(void) {
     HAL_Init();
 
     /* USER CODE BEGIN Init */
-    spi_init(&hspi1, TX_TIMEOUT, RX_TIMEOUT);
     /* USER CODE END Init */
 
     /* Configure the system clock */
@@ -97,10 +94,22 @@ int main(void) {
     MX_GPIO_Init();
     MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-    spi_cs_config_t thermal_config = {
-        .cs_pin = GPIO_PIN_14,
-        .cs_port = GPIOD,
+    spi_device_config_t device_table[] = {
+        [SPI_PAYLOAD_THERMAL] =
+            {
+                .cs =
+                    {
+                        .cs_pin = GPIO_PIN_14,
+                        .cs_port = GPIOD,
+                    },
+                .start_byte_timeout_ms = 1000,
+                .max_send_retries = 3,
+            },
     };
+
+    if (spi_bus_service_init(&hspi1, device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
+        Error_Handler();
+    }
     /* USER CODE END 2 */
 
     /* Initialize leds */
@@ -128,27 +137,13 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(thermal_query_ack(&thermal_config)));
+        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(thermal_query_ack()));
         HAL_Delay(1000);
 
-        log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(thermal_query_echo(&thermal_config)));
+        log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(thermal_query_echo()));
         HAL_Delay(1000);
 
-        log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(thermal_query_get_rtd(&thermal_config)));
-        HAL_Delay(1000);
-
-        uint8_t rx_data_ack[1];
-        uint16_t rx_length_ack;
-        spi_status_t status_ack = spi_thermal_query_acknowledge(&thermal_config, rx_data_ack, &rx_length_ack);
-        log_printf("SENDING ACK 2, Code: %s, Data: %x\r\n", spi_status_to_string(status_ack), rx_data_ack[0]);
-        HAL_Delay(1000);
-
-        uint8_t tx_data_echo[4] = {0x67, 0x67, 0x67, 0x67};
-        uint8_t rx_data_echo[4];
-        uint16_t rx_length_echo;
-        log_printf("SENDING ECHO 2, Code: %s\r\n",
-                   spi_thermal_query_echo(&thermal_config, tx_data_echo, rx_data_echo, &rx_length_echo));
-        log_as_bytes(rx_data_echo, rx_length_echo);
+        log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(thermal_query_get_rtd()));
         HAL_Delay(1000);
         /* USER CODE END 3 */
     }

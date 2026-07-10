@@ -1,73 +1,75 @@
 #include "spi_hal.h"
+#include "spi_packet.h"
 
-static spi_handle_t s_handle;
-static bool s_init = false;
+#include <string.h>
 
-static spi_status_t convert_hal_status(HAL_StatusTypeDef status);
+#define SPI_BUS_HAL_PLACEHOLDER_BYTE (0)
+// only adding this placeholder stuff cause I saw in apss 2 code that the rx and tx buffers are shared
+// so this is like the equivalent of the transmit no garbage part
+static const uint8_t s_dummy_tx[SPI_PACKET_MAX_DATA_SIZE] = {SPI_BUS_HAL_PLACEHOLDER_BYTE};
 
-spi_status_t spi_init(SPI_HandleTypeDef *hspi, uint32_t tx_timeout_ms, uint32_t rx_timeout_ms) {
-    if (hspi == NULL) {
-        return SPI_ERR_INVALID_ARGS;
+static SPI_HandleTypeDef *s_hspi;
+static void (*s_tx_cb)(SPI_HandleTypeDef *hspi);
+static void (*s_rxtx_cb)(SPI_HandleTypeDef *hspi);
+static void (*s_error_cb)(SPI_HandleTypeDef *hspi);
+
+void spi_device_select(const spi_cs_config_t *cs) { HAL_GPIO_WritePin(cs->cs_port, cs->cs_pin, GPIO_PIN_RESET); }
+
+void spi_device_deselect(const spi_cs_config_t *cs) { HAL_GPIO_WritePin(cs->cs_port, cs->cs_pin, GPIO_PIN_SET); }
+
+static spi_status_t register_callbacks() {
+    if (HAL_SPI_RegisterCallback(s_hspi, HAL_SPI_TX_COMPLETE_CB_ID, s_tx_cb) != HAL_OK) {
+        return SPI_ERR_HAL;
     }
-
-    s_handle.hspi = hspi;
-    s_handle.send_timeout_ms = tx_timeout_ms;
-    s_handle.receive_timeout_ms = rx_timeout_ms;
-
-    s_init = true;
-
+    if (HAL_SPI_RegisterCallback(s_hspi, HAL_SPI_TX_RX_COMPLETE_CB_ID, s_rxtx_cb) != HAL_OK) {
+        return SPI_ERR_HAL;
+    }
+    if (HAL_SPI_RegisterCallback(s_hspi, HAL_SPI_ERROR_CB_ID, s_error_cb) != HAL_OK) {
+        return SPI_ERR_HAL;
+    }
     return SPI_WORKED;
 }
 
-void spi_device_select(const spi_cs_config_t *cs) { HAL_GPIO_WritePin(cs->cs_port, cs->cs_pin, 0); }
-void spi_device_deselect(const spi_cs_config_t *cs) { HAL_GPIO_WritePin(cs->cs_port, cs->cs_pin, 1); }
-
-spi_status_t spi_send(const uint8_t *data, uint16_t length) {
-    if (!s_init) {
-        return SPI_ERR_NOT_INITALISED;
-    }
-
-    HAL_StatusTypeDef status = HAL_SPI_Transmit(s_handle.hspi, (uint8_t *)data, length, s_handle.send_timeout_ms);
-    return convert_hal_status(status);
-}
-
-spi_status_t spi_recieve(uint8_t *data, uint16_t length) {
-    if (!s_init) {
-        return SPI_ERR_NOT_INITALISED;
-    }
-
-    if (data == NULL) {
+spi_status_t spi_bus_hal_init(SPI_HandleTypeDef *hspi, void (*tx_cb)(SPI_HandleTypeDef *hspi),
+                              void (*rxtx_cb)(SPI_HandleTypeDef *hspi), void (*err_cb)(SPI_HandleTypeDef *hspi)) {
+    if (hspi == NULL || tx_cb == NULL || rxtx_cb == NULL || err_cb == NULL) {
         return SPI_ERR_INVALID_ARGS;
     }
 
-    HAL_StatusTypeDef status = HAL_SPI_Receive(s_handle.hspi, data, length, s_handle.receive_timeout_ms);
-    return convert_hal_status(status);
+    s_hspi = hspi;
+    s_tx_cb = tx_cb;
+    s_rxtx_cb = rxtx_cb;
+    s_error_cb = err_cb;
+
+    return register_callbacks();
 }
 
-spi_status_t spi_send_recieve(const uint8_t *tx_data, uint8_t *rx_data, uint16_t length) {
-    if (!s_init) {
+spi_status_t spi_bus_hal_reinit(SPI_HandleTypeDef *hspi) {
+    if (hspi == NULL || hspi != s_hspi) {
         return SPI_ERR_NOT_INITALISED;
     }
 
-    if (tx_data == NULL || rx_data == NULL) {
-        return SPI_ERR_INVALID_ARGS;
-    }
+    HAL_SPI_Abort(hspi); // abort anything already running if anything was
 
-    HAL_StatusTypeDef status =
-        HAL_SPI_TransmitReceive(s_handle.hspi, (uint8_t *)tx_data, rx_data, length, s_handle.send_timeout_ms);
-    return convert_hal_status(status);
-}
-
-spi_status_t spi_recieve_byte(uint8_t *byte) { return spi_recieve(byte, 1); }
-spi_status_t spi_send_byte(uint8_t byte) { return spi_send(&byte, 1); }
-
-static spi_status_t convert_hal_status(HAL_StatusTypeDef status) {
-    switch (status) {
-    case HAL_OK:
-        return SPI_WORKED;
-    case HAL_TIMEOUT:
-        return SPI_ERR_TIMEDOUT;
-    default:
+    if (HAL_SPI_DeInit(hspi) != HAL_OK) {
         return SPI_ERR_HAL;
     }
+    if (HAL_SPI_Init(hspi) != HAL_OK) {
+        return SPI_ERR_HAL;
+    }
+
+    return register_callbacks();
+}
+
+HAL_StatusTypeDef spi_bus_hal_abort_it(SPI_HandleTypeDef *hspi) { return HAL_SPI_Abort_IT(hspi); }
+
+HAL_StatusTypeDef spi_bus_hal_transmit_it(SPI_HandleTypeDef *hspi, const uint8_t *tx_data, uint16_t length) {
+    return HAL_SPI_Transmit_IT(hspi, (uint8_t *)tx_data, length);
+}
+
+HAL_StatusTypeDef spi_bus_hal_receive_it(SPI_HandleTypeDef *hspi, uint8_t *rx_data, uint16_t length) {
+    if (length > SPI_PACKET_MAX_DATA_SIZE) {
+        return HAL_ERROR;
+    }
+    return HAL_SPI_TransmitReceive_IT(hspi, (uint8_t *)s_dummy_tx, rx_data, length);
 }

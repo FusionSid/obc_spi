@@ -1,98 +1,115 @@
 #include "spi_transaction.h"
-#include "spi_packet.h"
-#include "string.h"
+#include <stdbool.h>
+#include <string.h>
 
-static spi_status_t transport_receive_packet(uint8_t *packet_buffer, uint16_t *packet_length_out, uint32_t timeout_ms) {
-    uint8_t byte;
-    uint32_t start_time = HAL_GetTick();
+static SPI_HandleTypeDef *s_hspi;
+static const spi_device_config_t *s_device_table;
+static uint8_t s_device_count;
+static volatile bool s_transaction_done;
 
-    do {
-        if ((HAL_GetTick() - start_time) > timeout_ms)
-            return SPI_ERR_TIMEDOUT; // we waited and waited and waited and nothing came :(
+static void fsm_notify(void *ctx) { s_transaction_done = true; }
 
-        if (spi_recieve_byte(&byte) != SPI_WORKED) continue;
-    } while (byte != SPI_PACKET_START_BYTE);
+static void recover_from_fatal_error(void) {
+    spi_bus_hal_reinit(s_hspi);
+    spi_fsm_reset();
+}
 
-    packet_buffer[0] = byte;
+static spi_response_code_t map_fsm_result(spi_fsm_result_t fsm_result) {
+    switch (fsm_result) {
+    case SPI_FSM_RESULT_OK:
+        return SPI_RESP_OK;
+    case SPI_FSM_RESULT_BAD_CRC:
+        return SPI_RESP_BAD_CRC;
+    case SPI_FSM_RESULT_START_TIMEOUT:
+        return SPI_RESP_TIMEOUT;
+    case SPI_FSM_RESULT_BAD_LENGTH:
+    case SPI_FSM_RESULT_BUS_ERROR:
+    default:
+        return SPI_RESP_BUS_ERROR;
+    }
+}
 
-    if (spi_recieve_byte(&packet_buffer[1]) != SPI_WORKED) {
+spi_status_t spi_bus_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t *device_table,
+                                  uint8_t device_count) {
+    if (hspi == NULL || device_table == NULL || device_count == 0) {
+        return SPI_ERR_INVALID_ARGS;
+    }
+
+    s_hspi = hspi;
+    s_device_table = device_table;
+    s_device_count = device_count;
+    s_transaction_done = false;
+
+    spi_status_t status1 = spi_fsm_init(hspi, fsm_notify, NULL);
+    if (status1 != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
 
-    uint8_t len_low;
-    uint8_t len_high;
-
-    if (spi_recieve_byte(&len_low) != SPI_WORKED || spi_recieve_byte(&len_high) != SPI_WORKED) {
+    spi_status_t status2 =
+        spi_bus_hal_init(hspi, spi_fsm_on_tx_complete_it, spi_fsm_on_rx_complete_it, spi_fsm_on_error_it);
+    if (status2 != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
-
-    packet_buffer[2] = len_low;
-    packet_buffer[3] = len_high;
-    uint16_t data_length = (uint16_t)len_low | ((uint16_t)len_high << 8);
-
-    if (data_length > SPI_PACKET_MAX_DATA_SIZE) {
-        return SPI_ERR_OVERFLOW;
-    }
-
-    if (spi_recieve(&packet_buffer[SPI_PACKET_HEADER_SIZE], data_length) != SPI_WORKED) {
-        return SPI_ERR_HAL;
-    }
-
-    uint16_t crc_index = SPI_PACKET_HEADER_SIZE + data_length;
-    if (spi_recieve(&packet_buffer[crc_index], SPI_PACKET_FOOTER_SIZE) != SPI_WORKED) {
-        return SPI_ERR_HAL;
-    }
-
-    *packet_length_out = SPI_PACKET_HEADER_SIZE + data_length + SPI_PACKET_FOOTER_SIZE;
 
     return SPI_WORKED;
 }
 
-spi_status_t spi_transaction(const spi_cs_config_t *cs, uint8_t query, const uint8_t *tx_data,
-                             uint16_t tx_length, uint8_t *rx_data, uint16_t rx_buffer_size, uint16_t *rx_length_out,
-                             uint32_t timeout_ms) {
-    uint8_t tx_packet[SPI_PACKET_MAX_PACKET_SIZE];
-    uint8_t rx_packet[SPI_PACKET_MAX_PACKET_SIZE];
-
-    spi_status_t status;
-    uint16_t received_packet_length;
-
-    uint16_t tx_packet_length = SPI_PACKET_HEADER_SIZE + tx_length + SPI_PACKET_FOOTER_SIZE;
-
-    status = spi_packet_build(tx_packet, query, tx_data, tx_length);
-    if (status != SPI_WORKED) {
-        return status;
+spi_response_code_t spi_bus_transact(spi_payload_t device, uint8_t query_code, const uint8_t *data, uint16_t data_len,
+                                     uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len) {
+    if (device >= s_device_count || data_len > SPI_PACKET_MAX_DATA_SIZE || (data_len != 0 && data == NULL)) {
+        return SPI_RESP_INVALID_ARGS;
     }
 
-    spi_device_select(cs); // pull the line to low
+    const spi_device_config_t *dev = &s_device_table[device];
+    uint32_t timeout_ms = dev->start_byte_timeout_ms;
 
-    status = spi_send(tx_packet, tx_packet_length);
-    if (status != SPI_WORKED) {
-        spi_device_deselect(cs);
-        return status;
+    if (spi_fsm_get_state() == SPI_FSM_STATE_FATAL_ERROR) {
+        recover_from_fatal_error();
     }
 
-    status = transport_receive_packet(rx_packet, &received_packet_length, timeout_ms);
-    spi_device_deselect(cs);
-    if (status != SPI_WORKED) {
-        return status;
+    spi_response_code_t response_code = SPI_RESP_BUS_ERROR;
+
+    for (uint8_t attempt = 0; attempt <= dev->max_send_retries; attempt++) {
+        s_transaction_done = false;
+
+        spi_status_t send_status = spi_fsm_send(&dev->cs, query_code, data, data_len, timeout_ms);
+        // spi_status_t send_status = spi_fsm_send(&dev->cs, (uint8_t)device, query_code, data, data_len, timeout_ms);
+        if (send_status != SPI_WORKED) {
+            if (spi_fsm_get_state() == SPI_FSM_STATE_FATAL_ERROR) {
+                recover_from_fatal_error();
+                continue;
+            } else if (spi_fsm_get_state() != SPI_FSM_STATE_IDLE) {
+                return SPI_RESP_BUSY;
+            }
+            response_code = SPI_RESP_BUS_ERROR;
+            continue;
+        }
+
+        while (!s_transaction_done) {
+            HAL_Delay(1);
+        }
+
+        spi_fsm_result_t fsm_result;
+        spi_packet_t packet = {0};
+        if (spi_fsm_take_last(&fsm_result, &packet) != SPI_WORKED) {
+            fsm_result = SPI_FSM_RESULT_BUS_ERROR;
+        }
+
+        response_code = map_fsm_result(fsm_result);
+        if (response_code == SPI_RESP_OK) {
+            if (out_data != NULL && packet.length > 0) {
+                memcpy(out_data, packet.data, packet.length);
+            }
+            if (out_len != NULL) {
+                *out_len = packet.length;
+            }
+            return SPI_RESP_OK;
+        }
+
+        if (response_code == SPI_RESP_BUS_ERROR) {
+            recover_from_fatal_error();
+        }
     }
 
-    spi_packet_t packet;
-    status = spi_packet_parse(rx_packet, received_packet_length, &packet);
-    if (status != SPI_WORKED) {
-        return status;
-    }
-
-    if (packet.length > rx_buffer_size) {
-        return SPI_ERR_OVERFLOW;
-    }
-
-    memcpy(rx_data, packet.data, packet.length);
-
-    if (rx_length_out) {
-        *rx_length_out = packet.length;
-    }
-
-    return SPI_WORKED;
+    return response_code;
 }
