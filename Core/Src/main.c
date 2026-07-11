@@ -98,10 +98,10 @@ int main(void) {
             {
                 .cs =
                     {
-                        .cs_pin = GPIO_PIN_14,
-                        .cs_port = GPIOD,
+                        .cs_pin = CHIP_SELECT_Pin,
+                        .cs_port = CHIP_SELECT_GPIO_Port,
                     },
-                .start_byte_timeout_ms = 1000,
+                .start_byte_timeout_ms = 500,
                 .max_send_retries = 3,
             },
     };

@@ -60,3 +60,15 @@ static inline const char *spi_radiation_query_to_string(spi_radiation_query_code
         return "invalid query type";
     }
 }
+static inline const char *spi_query_to_string(spi_payload_t payload, int query) {
+    switch (payload) {
+    case SPI_PAYLOAD_THERMAL:
+        return spi_thermal_query_to_string(query);
+    case SPI_PAYLOAD_RADIATION:
+        return spi_radiation_query_to_string(query);
+    case SPI_PAYLOAD_CAMERA:
+        return spi_camera_query_to_string(query);
+    default:
+        return "invalid payload";
+    }
+}

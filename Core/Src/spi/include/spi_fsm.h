@@ -17,14 +17,6 @@ typedef enum {
     SPI_FSM_STATE_FATAL_ERROR,
 } spi_fsm_state_t;
 
-typedef enum {
-    SPI_FSM_RESULT_OK = 0,
-    SPI_FSM_RESULT_BAD_CRC,
-    SPI_FSM_RESULT_START_TIMEOUT,
-    SPI_FSM_RESULT_BAD_LENGTH,
-    SPI_FSM_RESULT_BUS_ERROR,
-} spi_fsm_result_t;
-
 #define SPI_FSM_DEFAULT_START_TIMEOUT_MS (50)
 
 spi_status_t spi_fsm_init(SPI_HandleTypeDef *hspi, void (*notify_cb)(void *ctx), void *notify_ctx);
