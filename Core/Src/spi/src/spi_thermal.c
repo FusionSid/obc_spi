@@ -6,7 +6,7 @@
 spi_response_code_t thermal_query_ack(void) {
     uint8_t rx_data[SPI_PACKET_MAX_DATA_SIZE];
     uint16_t rx_length;
-    return spi_bus_transact(SPI_PAYLOAD_THERMAL, SPI_THERMAL_QUERY_ACKNOWLEDGE, NULL, 0, rx_data, &rx_length);
+    return spi_transact(SPI_PAYLOAD_THERMAL, SPI_THERMAL_QUERY_ACKNOWLEDGE, NULL, 0, rx_data, &rx_length);
 }
 
 spi_response_code_t thermal_query_echo(void) {
@@ -15,7 +15,7 @@ spi_response_code_t thermal_query_echo(void) {
     uint16_t rx_length;
 
     spi_response_code_t status =
-        spi_bus_transact(SPI_PAYLOAD_THERMAL, SPI_THERMAL_QUERY_ECHO, tx_data, sizeof(tx_data), rx_data, &rx_length);
+        spi_transact(SPI_PAYLOAD_THERMAL, SPI_THERMAL_QUERY_ECHO, tx_data, sizeof(tx_data), rx_data, &rx_length);
 
     if (status != SPI_RESP_OK) {
         return status;
@@ -33,7 +33,7 @@ spi_response_code_t thermal_query_get_rtd(void) {
     uint16_t rx_length;
 
     spi_response_code_t status =
-        spi_bus_transact(SPI_PAYLOAD_THERMAL, SPI_THERMAL_QUERY_RTD_DATA, NULL, 0, rx_data, &rx_length);
+        spi_transact(SPI_PAYLOAD_THERMAL, SPI_THERMAL_QUERY_RTD_DATA, NULL, 0, rx_data, &rx_length);
 
     if (status != SPI_RESP_OK) {
         return status;

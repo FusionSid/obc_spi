@@ -11,7 +11,7 @@ static volatile bool s_transaction_done;
 static void fsm_notify(void *ctx) { s_transaction_done = true; }
 
 static void recover_from_fatal_error(void) {
-    spi_bus_hal_reinit(s_hspi);
+    spi_hal_reinit(s_hspi);
     spi_fsm_reset();
 }
 
@@ -30,8 +30,7 @@ static spi_response_code_t map_fsm_result(spi_fsm_result_t fsm_result) {
     }
 }
 
-spi_status_t spi_bus_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t *device_table,
-                                  uint8_t device_count) {
+spi_status_t spi_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t *device_table, uint8_t device_count) {
     if (hspi == NULL || device_table == NULL || device_count == 0) {
         return SPI_ERR_INVALID_ARGS;
     }
@@ -47,7 +46,7 @@ spi_status_t spi_bus_service_init(SPI_HandleTypeDef *hspi, const spi_device_conf
     }
 
     spi_status_t status2 =
-        spi_bus_hal_init(hspi, spi_fsm_on_tx_complete_it, spi_fsm_on_rx_complete_it, spi_fsm_on_error_it);
+        spi_hal_init(hspi, spi_fsm_on_tx_complete_it, spi_fsm_on_rx_complete_it, spi_fsm_on_error_it);
     if (status2 != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
@@ -55,8 +54,8 @@ spi_status_t spi_bus_service_init(SPI_HandleTypeDef *hspi, const spi_device_conf
     return SPI_WORKED;
 }
 
-spi_response_code_t spi_bus_transact(spi_payload_t device, uint8_t query_code, const uint8_t *data, uint16_t data_len,
-                                     uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len) {
+spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const uint8_t *data, uint16_t data_len,
+                                 uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len) {
     if (device >= s_device_count || data_len > SPI_PACKET_MAX_DATA_SIZE || (data_len != 0 && data == NULL)) {
         return SPI_RESP_INVALID_ARGS;
     }

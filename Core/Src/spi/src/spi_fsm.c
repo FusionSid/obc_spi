@@ -72,29 +72,28 @@ spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_
     }
 
 #ifdef NEW_PACKET_FORMAT
-log_printf("using new format\r\n");
-spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, payload, query, data, data_len);
+    log_printf("using new format\r\n");
+    spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, payload, query, data, data_len);
 #else
-log_printf("using old format\r\n");
+    log_printf("using old format\r\n");
     spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, query, data, data_len);
 #endif
     if (build_status != SPI_WORKED) {
         return build_status;
     }
 
-    
     s_fsm.tx_len = (uint16_t)(SPI_PACKET_HEADER_SIZE + data_len + SPI_PACKET_FOOTER_SIZE);
     s_fsm.cs = cs;
     s_fsm.rx_wait_start_timeout_ms =
-    (start_byte_timeout_ms != 0) ? start_byte_timeout_ms : SPI_FSM_DEFAULT_START_TIMEOUT_MS;
+        (start_byte_timeout_ms != 0) ? start_byte_timeout_ms : SPI_FSM_DEFAULT_START_TIMEOUT_MS;
     s_fsm.last_valid = false;
     s_fsm.state = SPI_FSM_STATE_TX;
-    
+
     log_as_bytes(s_fsm.tx_buf, s_fsm.tx_len);
 
     spi_device_select(cs);
 
-    if (spi_bus_hal_transmit_it(s_fsm.hspi, s_fsm.tx_buf, s_fsm.tx_len) != HAL_OK) {
+    if (spi_hal_transmit_it(s_fsm.hspi, s_fsm.tx_buf, s_fsm.tx_len) != HAL_OK) {
         spi_device_deselect(cs);
         s_fsm.cs = NULL;
         s_fsm.state = SPI_FSM_STATE_FATAL_ERROR;
@@ -134,21 +133,21 @@ void spi_fsm_reset(void) {
 static void fsm_arm_wait_start(void) {
     s_fsm.state = SPI_FSM_STATE_RX_WAIT_START;
     s_fsm.rx_wait_start_entry_tick = HAL_GetTick();
-    if (spi_bus_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[0], 1) != HAL_OK) {
+    if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[0], 1) != HAL_OK) {
         fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
     }
 }
 
 static void fsm_arm_header(void) {
     s_fsm.state = SPI_FSM_STATE_RX_HEADER;
-    if (spi_bus_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[1], SPI_PACKET_HEADER_SIZE - 1) != HAL_OK) {
+    if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[1], SPI_PACKET_HEADER_SIZE - 1) != HAL_OK) {
         fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
     }
 }
 
 static void fsm_arm_payload(void) {
     s_fsm.state = SPI_FSM_STATE_RX_PAYLOAD;
-    if (spi_bus_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[SPI_PACKET_HEADER_SIZE], s_fsm.rx_data_length) != HAL_OK) {
+    if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[SPI_PACKET_HEADER_SIZE], s_fsm.rx_data_length) != HAL_OK) {
         fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
     }
 }
@@ -156,7 +155,7 @@ static void fsm_arm_payload(void) {
 static void fsm_arm_crc(void) {
     s_fsm.state = SPI_FSM_STATE_RX_CRC;
     uint16_t crc_offset = (uint16_t)(SPI_PACKET_HEADER_SIZE + s_fsm.rx_data_length);
-    if (spi_bus_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[crc_offset], SPI_PACKET_FOOTER_SIZE) != HAL_OK) {
+    if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[crc_offset], SPI_PACKET_FOOTER_SIZE) != HAL_OK) {
         fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
     }
 }
@@ -218,7 +217,7 @@ static void handle_state_wait_start(void) {
         uint32_t elapsed = HAL_GetTick() - s_fsm.rx_wait_start_entry_tick;
         if (elapsed >= s_fsm.rx_wait_start_timeout_ms) {
             fsm_finish(SPI_FSM_RESULT_START_TIMEOUT);
-        } else if (spi_bus_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[0], 1) != HAL_OK) {
+        } else if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[0], 1) != HAL_OK) {
             fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
         }
         return;

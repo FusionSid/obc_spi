@@ -30,8 +30,8 @@ static spi_status_t register_callbacks() {
     return SPI_WORKED;
 }
 
-spi_status_t spi_bus_hal_init(SPI_HandleTypeDef *hspi, void (*tx_cb)(SPI_HandleTypeDef *hspi),
-                              void (*rxtx_cb)(SPI_HandleTypeDef *hspi), void (*err_cb)(SPI_HandleTypeDef *hspi)) {
+spi_status_t spi_hal_init(SPI_HandleTypeDef *hspi, void (*tx_cb)(SPI_HandleTypeDef *hspi),
+                          void (*rxtx_cb)(SPI_HandleTypeDef *hspi), void (*err_cb)(SPI_HandleTypeDef *hspi)) {
     if (hspi == NULL || tx_cb == NULL || rxtx_cb == NULL || err_cb == NULL) {
         return SPI_ERR_INVALID_ARGS;
     }
@@ -44,12 +44,12 @@ spi_status_t spi_bus_hal_init(SPI_HandleTypeDef *hspi, void (*tx_cb)(SPI_HandleT
     return register_callbacks();
 }
 
-spi_status_t spi_bus_hal_reinit(SPI_HandleTypeDef *hspi) {
+spi_status_t spi_hal_reinit(SPI_HandleTypeDef *hspi) {
     if (hspi == NULL || hspi != s_hspi) {
         return SPI_ERR_NOT_INITALISED;
     }
 
-    spi_bus_hal_abort_it(hspi);
+    spi_hal_abort_it(hspi);
 
     if (HAL_SPI_DeInit(hspi) != HAL_OK) {
         return SPI_ERR_HAL;
@@ -61,13 +61,13 @@ spi_status_t spi_bus_hal_reinit(SPI_HandleTypeDef *hspi) {
     return register_callbacks();
 }
 
-HAL_StatusTypeDef spi_bus_hal_abort_it(SPI_HandleTypeDef *hspi) { return HAL_SPI_Abort_IT(hspi); }
+HAL_StatusTypeDef spi_hal_abort_it(SPI_HandleTypeDef *hspi) { return HAL_SPI_Abort_IT(hspi); }
 
-HAL_StatusTypeDef spi_bus_hal_transmit_it(SPI_HandleTypeDef *hspi, const uint8_t *tx_data, uint16_t length) {
+HAL_StatusTypeDef spi_hal_transmit_it(SPI_HandleTypeDef *hspi, const uint8_t *tx_data, uint16_t length) {
     return HAL_SPI_Transmit_IT(hspi, (uint8_t *)tx_data, length);
 }
 
-HAL_StatusTypeDef spi_bus_hal_receive_it(SPI_HandleTypeDef *hspi, uint8_t *rx_data, uint16_t length) {
+HAL_StatusTypeDef spi_hal_receive_it(SPI_HandleTypeDef *hspi, uint8_t *rx_data, uint16_t length) {
     if (length > SPI_PACKET_MAX_DATA_SIZE) {
         return HAL_ERROR;
     }

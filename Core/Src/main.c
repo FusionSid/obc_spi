@@ -25,7 +25,6 @@
 #include "spi_thermal.h"
 #include "spi_transaction.h"
 
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,7 +106,7 @@ int main(void) {
             },
     };
 
-    if (spi_bus_service_init(&hspi1, device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
+    if (spi_service_init(&hspi1, device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
         Error_Handler();
     }
     /* USER CODE END 2 */
