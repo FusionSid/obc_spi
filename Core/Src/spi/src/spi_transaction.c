@@ -1,4 +1,5 @@
 #include "spi_transaction.h"
+#include "log.h"
 #include <stdbool.h>
 #include <string.h>
 
@@ -69,11 +70,15 @@ spi_response_code_t spi_bus_transact(spi_payload_t device, uint8_t query_code, c
 
     spi_response_code_t response_code = SPI_RESP_BUS_ERROR;
 
-    for (uint8_t attempt = 0; attempt <= dev->max_send_retries; attempt++) {
+    for (uint8_t attempt = 0; attempt < dev->max_send_retries; attempt++) {
         s_transaction_done = false;
 
+        log_printf("SEnding to device %i\r\n", device);
+#ifdef NEW_PACKET_FORMAT
+        spi_status_t send_status = spi_fsm_send(&dev->cs, (uint8_t)device, query_code, data, data_len, timeout_ms);
+#else
         spi_status_t send_status = spi_fsm_send(&dev->cs, query_code, data, data_len, timeout_ms);
-        // spi_status_t send_status = spi_fsm_send(&dev->cs, (uint8_t)device, query_code, data, data_len, timeout_ms);
+#endif
         if (send_status != SPI_WORKED) {
             if (spi_fsm_get_state() == SPI_FSM_STATE_FATAL_ERROR) {
                 recover_from_fatal_error();

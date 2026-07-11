@@ -1,11 +1,14 @@
 #include "spi_fsm.h"
+#include "log.h"
 #include <string.h>
 
+#ifdef NEW_PACKET_FORMAT
+#define SPI_FSM_OFFSET_LEN_L 3
+#define SPI_FSM_OFFSET_LEN_H 4
+#else
 #define SPI_FSM_OFFSET_LEN_L 2
 #define SPI_FSM_OFFSET_LEN_H 3
-
-// #define SPI_FSM_OFFSET_LEN_L 3
-// #define SPI_FSM_OFFSET_LEN_H 4
+#endif
 
 typedef struct {
     spi_fsm_state_t state;
@@ -53,11 +56,14 @@ spi_status_t spi_fsm_init(SPI_HandleTypeDef *hspi, void (*notify_cb)(void *ctx),
     s_fsm.state = SPI_FSM_STATE_IDLE;
     return SPI_WORKED;
 }
-// spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t payload, uint8_t query, const uint8_t *data, uint16_t
-// data_len,
-//                           uint32_t start_byte_timeout_ms)
+#ifdef NEW_PACKET_FORMAT
+spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t payload, uint8_t query, const uint8_t *data,
+                          uint16_t data_len, uint32_t start_byte_timeout_ms)
+#else
 spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_t *data, uint16_t data_len,
-                          uint32_t start_byte_timeout_ms) {
+                          uint32_t start_byte_timeout_ms)
+#endif
+{
     if (s_fsm.hspi == NULL) {
         return SPI_ERR_NOT_INITALISED;
     }
@@ -65,18 +71,26 @@ spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_
         return SPI_ERR_INVALID_ARGS;
     }
 
-    // spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, payload, query, data, data_len);
+#ifdef NEW_PACKET_FORMAT
+log_printf("using new format\r\n");
+spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, payload, query, data, data_len);
+#else
+log_printf("using old format\r\n");
     spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, query, data, data_len);
+#endif
     if (build_status != SPI_WORKED) {
         return build_status;
     }
 
+    
     s_fsm.tx_len = (uint16_t)(SPI_PACKET_HEADER_SIZE + data_len + SPI_PACKET_FOOTER_SIZE);
     s_fsm.cs = cs;
     s_fsm.rx_wait_start_timeout_ms =
-        (start_byte_timeout_ms != 0) ? start_byte_timeout_ms : SPI_FSM_DEFAULT_START_TIMEOUT_MS;
+    (start_byte_timeout_ms != 0) ? start_byte_timeout_ms : SPI_FSM_DEFAULT_START_TIMEOUT_MS;
     s_fsm.last_valid = false;
     s_fsm.state = SPI_FSM_STATE_TX;
+    
+    log_as_bytes(s_fsm.tx_buf, s_fsm.tx_len);
 
     spi_device_select(cs);
 
@@ -237,7 +251,9 @@ static void handle_state_crc(void) {
     spi_status_t parse_status = spi_packet_parse(s_fsm.rx_buf, total_len, &parsed);
 
     if (parse_status == SPI_WORKED) {
-        // s_fsm.last_packet.payload = parsed.payload;
+#ifdef NEW_PACKET_FORMAT
+        s_fsm.last_packet.payload = parsed.payload;
+#endif
         s_fsm.last_packet.query = parsed.query;
         s_fsm.last_packet.length = parsed.length;
         s_fsm.last_packet.data = parsed.data;

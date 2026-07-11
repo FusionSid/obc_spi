@@ -49,7 +49,7 @@ spi_status_t spi_bus_hal_reinit(SPI_HandleTypeDef *hspi) {
         return SPI_ERR_NOT_INITALISED;
     }
 
-    HAL_SPI_Abort(hspi); // abort anything already running if anything was
+    spi_bus_hal_abort_it(hspi);
 
     if (HAL_SPI_DeInit(hspi) != HAL_OK) {
         return SPI_ERR_HAL;

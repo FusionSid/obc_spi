@@ -2,26 +2,39 @@
 
 #include <string.h>
 
-// this should be useful when we chnge the packet structure to have extra byte
+#ifdef NEW_PACKET_FORMAT
+
+#define SPI_PACKET_OFFSET_START 0
+#define SPI_PACKET_OFFSET_PAYLOAD 1
+#define SPI_PACKET_OFFSET_QUERY 2
+#define SPI_PACKET_OFFSET_LEN_L 3
+#define SPI_PACKET_OFFSET_LEN_H 4
+
+#else
+
 #define SPI_PACKET_OFFSET_START 0
 #define SPI_PACKET_OFFSET_QUERY 1
 #define SPI_PACKET_OFFSET_LEN_L 2
 #define SPI_PACKET_OFFSET_LEN_H 3
 
-// #define SPI_PACKET_OFFSET_START   0
-// #define SPI_PACKET_OFFSET_PAYLOAD 1
-// #define SPI_PACKET_OFFSET_QUERY   2 
-// #define SPI_PACKET_OFFSET_LEN_L   3 
-// #define SPI_PACKET_OFFSET_LEN_H   4
+#endif
 
-spi_status_t spi_packet_build(uint8_t *packet_out, uint8_t query, const uint8_t *data, uint16_t data_length) {
+#ifdef NEW_PACKET_FORMAT
+spi_status_t spi_packet_build(uint8_t *packet_out, uint8_t payload, uint8_t query, const uint8_t *data,
+                              uint16_t data_length)
+#else
+spi_status_t spi_packet_build(uint8_t *packet_out, uint8_t query, const uint8_t *data, uint16_t data_length)
+#endif
+{
     if (packet_out == NULL || (data_length != 0 && data == NULL) ||
         (data_length > (SPI_PACKET_MAX_PACKET_SIZE - SPI_PACKET_HEADER_SIZE - SPI_PACKET_FOOTER_SIZE))) {
         return SPI_ERR_INVALID_ARGS;
     }
 
     packet_out[SPI_PACKET_OFFSET_START] = SPI_PACKET_START_BYTE;
-    // packet_out[SPI_PACKET_OFFSET_PAYLOAD] = payload;
+#ifdef NEW_PACKET_FORMAT
+    packet_out[SPI_PACKET_OFFSET_PAYLOAD] = payload;
+#endif
     packet_out[SPI_PACKET_OFFSET_QUERY] = query;
 
     packet_out[SPI_PACKET_OFFSET_LEN_L] = (uint8_t)(data_length & 0xFF);
@@ -69,7 +82,9 @@ spi_status_t spi_packet_parse(const uint8_t *raw_packet, uint16_t raw_packet_len
         return SPI_ERR_CRCBAD;
     }
 
-    // packet_out->payload = raw_packet[SPI_PACKET_OFFSET_PAYLOAD];
+#ifdef NEW_PACKET_FORMAT
+    packet_out->payload = raw_packet[SPI_PACKET_OFFSET_PAYLOAD];
+#endif
     packet_out->query = raw_packet[SPI_PACKET_OFFSET_QUERY];
     packet_out->length = data_length;
     packet_out->data = &raw_packet[SPI_PACKET_HEADER_SIZE];
