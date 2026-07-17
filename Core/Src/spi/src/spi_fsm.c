@@ -44,32 +44,32 @@ static void handle_state_header(void);
 static void handle_state_payload(void);
 static void handle_state_crc(void);
 
-spi_status_t spi_fsm_init(SPI_HandleTypeDef *hspi, void (*notify_cb)(void *ctx), void *notify_ctx) {
-    if (hspi == NULL || notify_cb == NULL) {
+spi_status_t spi_fsm_init(SPI_HandleTypeDef *hspi) {
+    if (hspi == NULL) {
         return SPI_ERR_INVALID_ARGS;
     }
 
     memset(&s_fsm, 0, sizeof(s_fsm));
     s_fsm.hspi = hspi;
-    s_fsm.notify_cb = notify_cb;
-    s_fsm.notify_ctx = notify_ctx;
     s_fsm.state = SPI_FSM_STATE_IDLE;
     return SPI_WORKED;
 }
 #ifdef NEW_PACKET_FORMAT
 spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t payload, uint8_t query, const uint8_t *data,
-                          uint16_t data_len, uint32_t start_byte_timeout_ms)
+                          uint16_t data_len, uint32_t start_byte_timeout_ms, void (*notify_cb)(void *ctx))
 #else
 spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_t *data, uint16_t data_len,
-                          uint32_t start_byte_timeout_ms)
+                          uint32_t start_byte_timeout_ms, void (*notify_cb)(void *ctx))
 #endif
 {
     if (s_fsm.hspi == NULL) {
         return SPI_ERR_NOT_INITALISED;
     }
-    if (s_fsm.state != SPI_FSM_STATE_IDLE || cs == NULL) {
+    if (s_fsm.state != SPI_FSM_STATE_IDLE || cs == NULL || notify_cb == NULL) {
         return SPI_ERR_INVALID_ARGS;
     }
+
+    s_fsm.notify_cb = notify_cb;
 
 #ifdef NEW_PACKET_FORMAT
     log_printf("using new format\r\n");

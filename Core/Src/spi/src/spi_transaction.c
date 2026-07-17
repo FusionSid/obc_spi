@@ -40,7 +40,7 @@ spi_status_t spi_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t
     s_device_count = device_count;
     s_transaction_done = false;
 
-    spi_status_t status1 = spi_fsm_init(hspi, fsm_notify, NULL);
+    spi_status_t status1 = spi_fsm_init(hspi);
     if (status1 != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
@@ -74,9 +74,10 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
 
         log_printf("SEnding to device %i\r\n", device);
 #ifdef NEW_PACKET_FORMAT
-        spi_status_t send_status = spi_fsm_send(&dev->cs, (uint8_t)device, query_code, data, data_len, timeout_ms);
+        spi_status_t send_status =
+            spi_fsm_send(&dev->cs, (uint8_t)device, query_code, data, data_len, timeout_ms, fsm_notify);
 #else
-        spi_status_t send_status = spi_fsm_send(&dev->cs, query_code, data, data_len, timeout_ms);
+        spi_status_t send_status = spi_fsm_send(&dev->cs, query_code, data, data_len, timeout_ms, fsm_notify);
 #endif
         if (send_status != SPI_WORKED) {
             if (spi_fsm_get_state() == SPI_FSM_STATE_FATAL_ERROR) {
@@ -90,7 +91,6 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
         }
 
         while (!s_transaction_done) {
-            HAL_Delay(1);
         }
 
         spi_fsm_result_t fsm_result;
