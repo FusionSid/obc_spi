@@ -29,7 +29,7 @@ typedef struct {
 
     void (*notify_cb)(void *ctx);
 
-
+    bool expects_response;
 } spi_fsm_t;
 
 static spi_fsm_t s_fsm = {0};
@@ -57,10 +57,11 @@ spi_status_t spi_fsm_init(SPI_HandleTypeDef *hspi) {
 }
 #ifdef NEW_PACKET_FORMAT
 spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t payload, uint8_t query, const uint8_t *data,
-                          uint16_t data_len, uint32_t start_byte_timeout_ms, void (*notify_cb)(void *ctx))
+                          uint16_t data_len, uint32_t start_byte_timeout_ms, void (*notify_cb)(void *ctx),
+                          bool expects_response)
 #else
 spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_t *data, uint16_t data_len,
-                          uint32_t start_byte_timeout_ms, void (*notify_cb)(void *ctx))
+                          uint32_t start_byte_timeout_ms, void (*notify_cb)(void *ctx), bool expects_response)
 #endif
 {
     if (s_fsm.hspi == NULL) {
@@ -83,6 +84,7 @@ spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_
         return build_status;
     }
 
+    s_fsm.expects_response = expects_response;
     s_fsm.tx_len = (uint16_t)(SPI_PACKET_HEADER_SIZE + data_len + SPI_PACKET_FOOTER_SIZE);
     s_fsm.cs = cs;
     s_fsm.rx_wait_start_timeout_ms =
@@ -176,7 +178,12 @@ void spi_fsm_on_tx_complete_it(SPI_HandleTypeDef *hspi) {
     if (hspi != s_fsm.hspi || s_fsm.state != SPI_FSM_STATE_TX) {
         return;
     }
-    fsm_arm_wait_start();
+
+    if (s_fsm.expects_response) {
+        fsm_arm_wait_start();
+    } else {
+        fsm_finish(SPI_FSM_RESULT_OK);
+    }
 }
 
 void spi_fsm_on_rx_complete_it(SPI_HandleTypeDef *hspi) {

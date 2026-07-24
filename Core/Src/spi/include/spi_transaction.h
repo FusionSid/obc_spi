@@ -13,4 +13,4 @@ typedef struct {
 
 spi_status_t spi_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t *device_table, uint8_t device_count);
 spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const uint8_t *data, uint16_t data_len,
-                                 uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len);
+                                 uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len, bool expects_response);

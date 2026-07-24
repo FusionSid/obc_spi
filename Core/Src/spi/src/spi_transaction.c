@@ -55,7 +55,7 @@ spi_status_t spi_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t
 }
 
 spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const uint8_t *data, uint16_t data_len,
-                                 uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len) {
+                                 uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len, bool expects_response) {
     if (device >= s_device_count || data_len > SPI_PACKET_MAX_DATA_SIZE || (data_len != 0 && data == NULL)) {
         return SPI_RESP_INVALID_ARGS;
     }
@@ -72,12 +72,12 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
     for (uint8_t attempt = 0; attempt < dev->max_send_retries; attempt++) {
         s_transaction_done = false;
 
-        log_printf("SEnding to device %i\r\n", device);
 #ifdef NEW_PACKET_FORMAT
-        spi_status_t send_status =
-            spi_fsm_send(&dev->cs, (uint8_t)device, query_code, data, data_len, timeout_ms, fsm_notify);
+        spi_status_t send_status = spi_fsm_send(&dev->cs, (uint8_t)device, query_code, data, data_len, timeout_ms,
+                                                fsm_notify, expects_response);
 #else
-        spi_status_t send_status = spi_fsm_send(&dev->cs, query_code, data, data_len, timeout_ms, fsm_notify);
+        spi_status_t send_status =
+            spi_fsm_send(&dev->cs, query_code, data, data_len, timeout_ms, fsm_notify, expects_response);
 #endif
         if (send_status != SPI_WORKED) {
             if (spi_fsm_get_state() == SPI_FSM_STATE_FATAL_ERROR) {
