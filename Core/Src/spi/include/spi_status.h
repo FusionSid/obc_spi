@@ -43,3 +43,15 @@ static inline const char *spi_status_to_string(spi_status_t status) {
         return "invalid status type";
     }
 }
+
+static inline const char *spi_response_code_to_string(spi_response_code_t status) {
+    switch (status) {
+#define X(name)                                                                                                        \
+    case name:                                                                                                         \
+        return #name;
+        SPI_RESP_LIST
+#undef X
+    default:
+        return "invalid status type";
+    }
+}

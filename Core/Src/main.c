@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -47,6 +49,23 @@ COM_InitTypeDef BspCOMInit;
 
 SPI_HandleTypeDef hspi1;
 
+/* Definitions for spi_task */
+osThreadId_t spi_taskHandle;
+const osThreadAttr_t spi_task_attributes = {
+    .name = "spi_task",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+/* Definitions for Task1 */
+osThreadId_t Task1Handle;
+const osThreadAttr_t Task1_attributes = {
+    .name = "Task1",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityLow,
+};
+/* Definitions for spi_queue */
+osMessageQueueId_t spi_queueHandle;
+const osMessageQueueAttr_t spi_queue_attributes = {.name = "spi_queue"};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -55,6 +74,9 @@ SPI_HandleTypeDef hspi1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
+void start_spi_task(void *argument);
+void StartTask1(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -111,6 +133,44 @@ int main(void) {
     }
     /* USER CODE END 2 */
 
+    /* Init scheduler */
+    osKernelInitialize();
+
+    /* USER CODE BEGIN RTOS_MUTEX */
+    /* add mutexes, ... */
+    /* USER CODE END RTOS_MUTEX */
+
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* add semaphores, ... */
+    /* USER CODE END RTOS_SEMAPHORES */
+
+    /* USER CODE BEGIN RTOS_TIMERS */
+    /* start timers, add new ones, ... */
+    /* USER CODE END RTOS_TIMERS */
+
+    /* Create the queue(s) */
+    /* creation of spi_queue */
+    spi_queueHandle = osMessageQueueNew(16, sizeof(uint16_t), &spi_queue_attributes);
+
+    /* USER CODE BEGIN RTOS_QUEUES */
+    /* add queues, ... */
+    /* USER CODE END RTOS_QUEUES */
+
+    /* Create the thread(s) */
+    /* creation of spi_task */
+    spi_taskHandle = osThreadNew(start_spi_task, NULL, &spi_task_attributes);
+
+    /* creation of Task1 */
+    Task1Handle = osThreadNew(StartTask1, NULL, &Task1_attributes);
+
+    /* USER CODE BEGIN RTOS_THREADS */
+    /* add threads, ... */
+    /* USER CODE END RTOS_THREADS */
+
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+    /* USER CODE END RTOS_EVENTS */
+
     /* Initialize leds */
     BSP_LED_Init(LED_GREEN);
     BSP_LED_Init(LED_YELLOW);
@@ -129,6 +189,11 @@ int main(void) {
         Error_Handler();
     }
 
+    /* Start scheduler */
+    osKernelStart();
+
+    /* We should never get here as control is now taken by the scheduler */
+
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
@@ -136,13 +201,13 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(thermal_query_ack()));
+        log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_ack()));
         HAL_Delay(1000);
 
-        log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(thermal_query_echo()));
+        log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo()));
         HAL_Delay(1000);
 
-        log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(thermal_query_get_rtd()));
+        log_printf("SENDING RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_get_rtd()));
         HAL_Delay(1000);
         /* USER CODE END 3 */
     }
@@ -299,6 +364,58 @@ static void MX_GPIO_Init(void) {
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_start_spi_task */
+/**
+ * @brief  Function implementing the spi_task thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_start_spi_task */
+void start_spi_task(void *argument) {
+    /* USER CODE BEGIN 5 */
+    /* Infinite loop */
+    for (;;) {
+        osDelay(1);
+    }
+    /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartTask1 */
+/**
+ * @brief Function implementing the Task1 thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartTask1 */
+void StartTask1(void *argument) {
+    /* USER CODE BEGIN StartTask1 */
+    /* Infinite loop */
+    for (;;) {
+        osDelay(1);
+    }
+    /* USER CODE END StartTask1 */
+}
+
+/**
+ * @brief  Period elapsed callback in non blocking mode
+ * @note   This function is called  when TIM6 interrupt took place, inside
+ * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+ * a global variable "uwTick" used as application time base.
+ * @param  htim : TIM handle
+ * @retval None
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    /* USER CODE BEGIN Callback 0 */
+
+    /* USER CODE END Callback 0 */
+    if (htim->Instance == TIM6) {
+        HAL_IncTick();
+    }
+    /* USER CODE BEGIN Callback 1 */
+
+    /* USER CODE END Callback 1 */
+}
 
 /**
  * @brief  This function is executed in case of error occurrence.
