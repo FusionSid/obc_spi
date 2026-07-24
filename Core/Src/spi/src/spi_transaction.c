@@ -117,3 +117,29 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
 
     return response_code;
 }
+
+/*
+general pseudocode plan
+
+spi transact:
+    clear current notifcaiton
+    enqueue req into queue
+    wait for notification from spi task
+    return the data to caller
+
+spi_task:
+    while true:
+    dequeue req from queue
+    call spi_execute(req)
+    notify task
+
+spi_execute
+    try upto 3 times:
+        spi_fsm_send(...req, notify=new_notify)
+        wait for notification from notify_cb
+        set req.data = take_last()
+        return
+
+new_notify:
+    send notification from isr (replaces transaction done)
+*/
