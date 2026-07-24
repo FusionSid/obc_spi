@@ -28,7 +28,8 @@ typedef struct {
     spi_packet_t last_packet;
 
     void (*notify_cb)(void *ctx);
-    void *notify_ctx;
+
+
 } spi_fsm_t;
 
 static spi_fsm_t s_fsm = {0};
@@ -169,10 +170,6 @@ static void fsm_finish(spi_fsm_result_t result) {
     s_fsm.last_result = result;
     s_fsm.last_valid = true;
     s_fsm.state = (result == SPI_FSM_RESULT_BUS_ERROR) ? SPI_FSM_STATE_FATAL_ERROR : SPI_FSM_STATE_IDLE;
-
-    if (s_fsm.notify_cb != NULL) {
-        s_fsm.notify_cb(s_fsm.notify_ctx);
-    }
 }
 
 void spi_fsm_on_tx_complete_it(SPI_HandleTypeDef *hspi) {
