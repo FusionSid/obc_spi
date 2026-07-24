@@ -34,10 +34,10 @@ typedef struct {
 
 static spi_fsm_t s_fsm = {0};
 
-static void fsm_arm_wait_start(void);
-static void fsm_arm_header(void);
-static void fsm_arm_payload(void);
-static void fsm_arm_crc(void);
+static void fsm_enter_state_wait_start(void);
+static void fsm_enter_state_header(void);
+static void fsm_enter_state_payload(void);
+static void fsm_enter_state_crc(void);
 static void fsm_finish(spi_fsm_result_t result);
 
 static void handle_state_wait_start(void);
@@ -133,7 +133,7 @@ void spi_fsm_reset(void) {
     s_fsm.state = SPI_FSM_STATE_IDLE;
 }
 
-static void fsm_arm_wait_start(void) {
+static void fsm_enter_state_wait_start(void) {
     s_fsm.state = SPI_FSM_STATE_RX_WAIT_START;
     s_fsm.rx_wait_start_entry_tick = HAL_GetTick();
     if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[0], 1) != HAL_OK) {
@@ -141,21 +141,21 @@ static void fsm_arm_wait_start(void) {
     }
 }
 
-static void fsm_arm_header(void) {
+static void fsm_enter_state_header(void) {
     s_fsm.state = SPI_FSM_STATE_RX_HEADER;
     if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[1], SPI_PACKET_HEADER_SIZE - 1) != HAL_OK) {
         fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
     }
 }
 
-static void fsm_arm_payload(void) {
+static void fsm_enter_state_payload(void) {
     s_fsm.state = SPI_FSM_STATE_RX_PAYLOAD;
     if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[SPI_PACKET_HEADER_SIZE], s_fsm.rx_data_length) != HAL_OK) {
         fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
     }
 }
 
-static void fsm_arm_crc(void) {
+static void fsm_enter_state_crc(void) {
     s_fsm.state = SPI_FSM_STATE_RX_CRC;
     uint16_t crc_offset = (uint16_t)(SPI_PACKET_HEADER_SIZE + s_fsm.rx_data_length);
     if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[crc_offset], SPI_PACKET_FOOTER_SIZE) != HAL_OK) {
@@ -184,7 +184,7 @@ void spi_fsm_on_tx_complete_it(SPI_HandleTypeDef *hspi) {
     }
 
     if (s_fsm.expects_response) {
-        fsm_arm_wait_start();
+        fsm_enter_state_wait_start();
     } else {
         fsm_finish(SPI_FSM_RESULT_OK);
     }
@@ -230,7 +230,7 @@ static void handle_state_wait_start(void) {
         }
         return;
     }
-    fsm_arm_header();
+    fsm_enter_state_header();
 }
 
 static void handle_state_header(void) {
@@ -244,13 +244,13 @@ static void handle_state_header(void) {
 
     s_fsm.rx_data_length = data_length;
     if (data_length > 0) {
-        fsm_arm_payload();
+        fsm_enter_state_payload();
     } else {
-        fsm_arm_crc();
+        fsm_enter_state_crc();
     }
 }
 
-static void handle_state_payload(void) { fsm_arm_crc(); }
+static void handle_state_payload(void) { fsm_enter_state_crc(); }
 
 static void handle_state_crc(void) {
     uint16_t total_len = (uint16_t)(SPI_PACKET_HEADER_SIZE + s_fsm.rx_data_length + SPI_PACKET_FOOTER_SIZE);
