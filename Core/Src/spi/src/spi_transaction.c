@@ -1,4 +1,5 @@
 #include "spi_transaction.h"
+#include "cmsis_os2.h"
 #include "log.h"
 #include <stdbool.h>
 #include <string.h>
@@ -69,7 +70,20 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
 
     spi_response_code_t response_code = SPI_RESP_BUS_ERROR;
 
+    const uint16_t hard_attempt_cap = (uint16_t)dev->max_send_retries * 4u + 4u;
+    uint16_t total_attempts = 0;
+
     for (uint8_t attempt = 0; attempt < dev->max_send_retries; attempt++) {
+        total_attempts++;
+        log_printf("spi_transact: attempt %u/%u (total_attempts=%u) state_before=%d\r\n", attempt + 1,
+                  dev->max_send_retries, total_attempts, (int)spi_fsm_get_state());
+
+        if (total_attempts > hard_attempt_cap) {
+            log_printf("spi_transact: HARD CAP HIT (%u), aborting transaction\r\n", hard_attempt_cap);
+            recover_from_fatal_error();
+            return SPI_RESP_BUS_ERROR;
+        }
+
         s_transaction_done = false;
 
 #ifdef NEW_PACKET_FORMAT
@@ -80,6 +94,8 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
             spi_fsm_send(&dev->cs, query_code, data, data_len, timeout_ms, fsm_notify, expects_response);
 #endif
         if (send_status != SPI_WORKED) {
+            log_printf("spi_transact: spi_fsm_send failed, status=%d, fsm_state=%d\r\n", (int)send_status,
+                      (int)spi_fsm_get_state());
             if (spi_fsm_get_state() == SPI_FSM_STATE_FATAL_ERROR) {
                 recover_from_fatal_error();
                 continue;
@@ -90,7 +106,19 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
             continue;
         }
 
+        uint32_t wait_start = osKernelGetTickCount();
         while (!s_transaction_done) {
+            osDelay(1);
+            if ((osKernelGetTickCount() - wait_start) > (timeout_ms + 1000)) {
+                log_printf("spi_transact: WATCHDOG - s_transaction_done never set, forcing recovery\r\n");
+                recover_from_fatal_error();
+                s_transaction_done = true;
+                response_code = SPI_RESP_TIMEOUT;
+                break;
+            }
+        }
+        if (response_code == SPI_RESP_TIMEOUT) {
+            continue;
         }
 
         spi_fsm_result_t fsm_result;
@@ -100,6 +128,9 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
         }
 
         response_code = map_fsm_result(fsm_result);
+        log_printf("spi_transact: attempt %u result=%d (fsm_result=%d)\r\n", attempt + 1, (int)response_code,
+                  (int)fsm_result);
+
         if (response_code == SPI_RESP_OK) {
             if (out_data != NULL && packet.length > 0) {
                 memcpy(out_data, packet.data, packet.length);

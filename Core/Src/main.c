@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -47,6 +49,13 @@ COM_InitTypeDef BspCOMInit;
 
 SPI_HandleTypeDef hspi1;
 
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+    .name = "defaultTask",
+    .stack_size = 1024 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -55,6 +64,8 @@ SPI_HandleTypeDef hspi1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
+void StartDefaultTask(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -93,7 +104,7 @@ int main(void) {
     MX_GPIO_Init();
     MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-    spi_device_config_t device_table[] = {
+    const static spi_device_config_t device_table[] = {
         [SPI_PAYLOAD_THERMAL] =
             {
                 .cs =
@@ -110,6 +121,37 @@ int main(void) {
         Error_Handler();
     }
     /* USER CODE END 2 */
+
+    /* Init scheduler */
+    osKernelInitialize();
+
+    /* USER CODE BEGIN RTOS_MUTEX */
+    /* add mutexes, ... */
+    /* USER CODE END RTOS_MUTEX */
+
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* add semaphores, ... */
+    /* USER CODE END RTOS_SEMAPHORES */
+
+    /* USER CODE BEGIN RTOS_TIMERS */
+    /* start timers, add new ones, ... */
+    /* USER CODE END RTOS_TIMERS */
+
+    /* USER CODE BEGIN RTOS_QUEUES */
+    /* add queues, ... */
+    /* USER CODE END RTOS_QUEUES */
+
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+    /* USER CODE BEGIN RTOS_THREADS */
+    /* add threads, ... */
+    /* USER CODE END RTOS_THREADS */
+
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+    /* USER CODE END RTOS_EVENTS */
 
     /* Initialize leds */
     BSP_LED_Init(LED_GREEN);
@@ -129,6 +171,11 @@ int main(void) {
         Error_Handler();
     }
 
+    /* Start scheduler */
+    osKernelStart();
+
+    /* We should never get here as control is now taken by the scheduler */
+
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
@@ -136,14 +183,7 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_ack()));
-        HAL_Delay(1000);
 
-        log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo()));
-        HAL_Delay(1000);
-
-        log_printf("SENDING RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_get_rtd()));
-        HAL_Delay(1000);
         /* USER CODE END 3 */
     }
 }
@@ -300,6 +340,31 @@ static void MX_GPIO_Init(void) {
 
 /* USER CODE END 4 */
 
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+ * @brief  Function implementing the defaultTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument) {
+    /* USER CODE BEGIN 5 */
+    log_init();
+
+    /* Infinite loop */
+    for (;;) {
+        log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_ack()));
+        osDelay(5000);
+
+        log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo()));
+        osDelay(5000);
+
+        log_printf("SENDING RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_get_rtd()));
+        osDelay(5000);
+    }
+    /* USER CODE END 5 */
+}
+
 /**
  * @brief  Period elapsed callback in non blocking mode
  * @note   This function is called  when TIM7 interrupt took place, inside
@@ -318,6 +383,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     /* USER CODE BEGIN Callback 1 */
 
     /* USER CODE END Callback 1 */
+}
+
+/**
+ * @brief  Called by FreeRTOS if a task's stack overflows.
+ *         Put a breakpoint here - pxCurrentTCB / pcTaskName tells you which task.
+ */
+void vApplicationStackOverflowHook(osThreadId_t xTask, char *pcTaskName) {
+    (void)xTask;
+    (void)pcTaskName;
+    __disable_irq();
+    while (1) {
+    }
+}
+
+/**
+ * @brief  Called by FreeRTOS if pvPortMalloc() fails (heap exhausted).
+ *         Put a breakpoint here if you hit it - raise configTOTAL_HEAP_SIZE.
+ */
+void vApplicationMallocFailedHook(void) {
+    __disable_irq();
+    while (1) {
+    }
 }
 
 /**

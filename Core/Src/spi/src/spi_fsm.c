@@ -1,4 +1,5 @@
 #include "spi_fsm.h"
+#include "cmsis_os2.h"
 #include "log.h"
 #include <string.h>
 
@@ -125,6 +126,9 @@ spi_status_t spi_fsm_take_last(spi_fsm_result_t *result_out, spi_packet_t *packe
 spi_fsm_state_t spi_fsm_get_state(void) { return s_fsm.state; }
 
 void spi_fsm_reset(void) {
+    if (s_fsm.hspi != NULL) {
+        spi_hal_abort_it(s_fsm.hspi);
+    }
     if (s_fsm.cs != NULL) {
         spi_device_deselect(s_fsm.cs);
     }
@@ -135,7 +139,7 @@ void spi_fsm_reset(void) {
 
 static void fsm_enter_state_wait_start(void) {
     s_fsm.state = SPI_FSM_STATE_RX_WAIT_START;
-    s_fsm.rx_wait_start_entry_tick = HAL_GetTick();
+    s_fsm.rx_wait_start_entry_tick = osKernelGetTickCount();
     if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[0], 1) != HAL_OK) {
         fsm_finish(SPI_FSM_RESULT_BUS_ERROR);
     }
@@ -180,7 +184,7 @@ static void fsm_finish(spi_fsm_result_t result) {
 
 void spi_fsm_on_tx_complete_it(SPI_HandleTypeDef *hspi) {
     if (hspi != s_fsm.hspi || s_fsm.state != SPI_FSM_STATE_TX) {
-        return;
+        return; /* stale/unexpected callback - ignore */
     }
 
     if (s_fsm.expects_response) {
@@ -222,7 +226,7 @@ void spi_fsm_on_error_it(SPI_HandleTypeDef *hspi) {
 
 static void handle_state_wait_start(void) {
     if (s_fsm.rx_buf[0] != SPI_PACKET_START_BYTE) {
-        uint32_t elapsed = HAL_GetTick() - s_fsm.rx_wait_start_entry_tick;
+        uint32_t elapsed = osKernelGetTickCount() - s_fsm.rx_wait_start_entry_tick;
         if (elapsed >= s_fsm.rx_wait_start_timeout_ms) {
             fsm_finish(SPI_FSM_RESULT_START_TIMEOUT);
         } else if (spi_hal_receive_it(s_fsm.hspi, &s_fsm.rx_buf[0], 1) != HAL_OK) {
