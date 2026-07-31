@@ -75,10 +75,8 @@ spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_
     s_fsm.notify_cb = notify_cb;
 
 #ifdef NEW_PACKET_FORMAT
-    log_printf("using new format\r\n");
     spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, payload, query, data, data_len);
 #else
-    log_printf("using old format\r\n");
     spi_status_t build_status = spi_packet_build(s_fsm.tx_buf, query, data, data_len);
 #endif
     if (build_status != SPI_WORKED) {

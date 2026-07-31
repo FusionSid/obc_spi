@@ -70,16 +70,15 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
 
     spi_response_code_t response_code = SPI_RESP_BUS_ERROR;
 
-    const uint16_t hard_attempt_cap = (uint16_t)dev->max_send_retries * 4u + 4u;
+    const uint16_t hard_attempt_cap = (uint16_t)dev->max_send_retries * 4 + 4;
     uint16_t total_attempts = 0;
 
     for (uint8_t attempt = 0; attempt < dev->max_send_retries; attempt++) {
         total_attempts++;
-        log_printf("spi_transact: attempt %u/%u (total_attempts=%u) state_before=%d\r\n", attempt + 1,
-                   dev->max_send_retries, total_attempts, (int)spi_fsm_get_state());
+        log_printf("spi_transact attempt %u/%u state_before=%d\r\n", attempt + 1,
+                   dev->max_send_retries, (int)spi_fsm_get_state());
 
         if (total_attempts > hard_attempt_cap) {
-            log_printf("spi_transact: HARD CAP HIT (%u), aborting transaction\r\n", hard_attempt_cap);
             recover_from_fatal_error();
             return SPI_RESP_BUS_ERROR;
         }
@@ -110,7 +109,7 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
         while (!s_transaction_done) {
             osDelay(1);
             if ((osKernelGetTickCount() - wait_start) > (timeout_ms + 1000)) {
-                log_printf("spi_transact: WATCHDOG - s_transaction_done never set, forcing recovery\r\n");
+                log_printf("s_transaction_done forcing exit\r\n");
                 recover_from_fatal_error();
                 s_transaction_done = true;
                 response_code = SPI_RESP_TIMEOUT;
@@ -128,7 +127,7 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
         }
 
         response_code = map_fsm_result(fsm_result);
-        log_printf("spi_transact: attempt %u result=%d (fsm_result=%d)\r\n", attempt + 1, (int)response_code,
+        log_printf("spi_transact attempt %u result=%d (fsm_result=%d)\r\n", attempt + 1, (int)response_code,
                    (int)fsm_result);
 
         if (response_code == SPI_RESP_OK) {
