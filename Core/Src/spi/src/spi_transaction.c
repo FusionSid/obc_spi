@@ -56,7 +56,7 @@ spi_status_t spi_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t
 }
 
 spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const uint8_t *data, uint16_t data_len,
-                                 uint8_t out_data[SPI_PACKET_MAX_DATA_SIZE], uint16_t *out_len, bool expects_response) {
+                                 spi_packet_t *response, bool expects_response) {
     if (device >= s_device_count || data_len > SPI_PACKET_MAX_DATA_SIZE || (data_len != 0 && data == NULL)) {
         return SPI_RESP_INVALID_ARGS;
     }
@@ -76,7 +76,7 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
     for (uint8_t attempt = 0; attempt < dev->max_send_retries; attempt++) {
         total_attempts++;
         log_printf("spi_transact: attempt %u/%u (total_attempts=%u) state_before=%d\r\n", attempt + 1,
-                  dev->max_send_retries, total_attempts, (int)spi_fsm_get_state());
+                   dev->max_send_retries, total_attempts, (int)spi_fsm_get_state());
 
         if (total_attempts > hard_attempt_cap) {
             log_printf("spi_transact: HARD CAP HIT (%u), aborting transaction\r\n", hard_attempt_cap);
@@ -95,7 +95,7 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
 #endif
         if (send_status != SPI_WORKED) {
             log_printf("spi_transact: spi_fsm_send failed, status=%d, fsm_state=%d\r\n", (int)send_status,
-                      (int)spi_fsm_get_state());
+                       (int)spi_fsm_get_state());
             if (spi_fsm_get_state() == SPI_FSM_STATE_FATAL_ERROR) {
                 recover_from_fatal_error();
                 continue;
@@ -129,15 +129,13 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
 
         response_code = map_fsm_result(fsm_result);
         log_printf("spi_transact: attempt %u result=%d (fsm_result=%d)\r\n", attempt + 1, (int)response_code,
-                  (int)fsm_result);
+                   (int)fsm_result);
 
         if (response_code == SPI_RESP_OK) {
-            if (out_data != NULL && packet.length > 0) {
-                memcpy(out_data, packet.data, packet.length);
+            if (response != NULL) {
+                *response = packet;
             }
-            if (out_len != NULL) {
-                *out_len = packet.length;
-            }
+
             return SPI_RESP_OK;
         }
 

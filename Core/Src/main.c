@@ -353,13 +353,13 @@ void StartDefaultTask(void *argument) {
 
     /* Infinite loop */
     for (;;) {
-        log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_ack()));
+        log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_ack2()));
         osDelay(5000);
 
-        log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo()));
+        log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo2()));
         osDelay(5000);
 
-        log_printf("SENDING RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_get_rtd()));
+        log_printf("SENDING RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_get_rtd2()));
         osDelay(5000);
     }
     /* USER CODE END 5 */
