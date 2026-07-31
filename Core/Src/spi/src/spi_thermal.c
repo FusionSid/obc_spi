@@ -80,9 +80,10 @@ spi_response_code_t thermal_query_ack2() {
 }
 
 spi_response_code_t thermal_query_echo2() {
-    thermal_echo_request_t req = {.length = 47};
+    uint8_t buffer[42];
+    memset(buffer, 67, sizeof(buffer));
 
-    memset(req.data, 67, req.length);
+    thermal_echo_request_t req = {.data = buffer, .length = sizeof(buffer)};
 
     thermal_echo_response_t resp;
 

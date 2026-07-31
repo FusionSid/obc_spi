@@ -13,7 +13,7 @@
 #endif
 
 #define SPI_PACKET_FOOTER_SIZE 2    // crc
-#define SPI_PACKET_MAX_DATA_SIZE 67 // probably change to smth more reasonable later
+#define SPI_PACKET_MAX_DATA_SIZE 676 // probably change to smth more reasonable later
 
 #define SPI_PACKET_MAX_PACKET_SIZE (SPI_PACKET_HEADER_SIZE + SPI_PACKET_MAX_DATA_SIZE + SPI_PACKET_FOOTER_SIZE)
 

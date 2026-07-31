@@ -104,22 +104,6 @@ int main(void) {
     MX_GPIO_Init();
     MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-    const static spi_device_config_t device_table[] = {
-        [SPI_PAYLOAD_THERMAL] =
-            {
-                .cs =
-                    {
-                        .cs_pin = CHIP_SELECT_Pin,
-                        .cs_port = CHIP_SELECT_GPIO_Port,
-                    },
-                .start_byte_timeout_ms = 500,
-                .max_send_retries = 3,
-            },
-    };
-
-    if (spi_service_init(&hspi1, device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
-        Error_Handler();
-    }
     /* USER CODE END 2 */
 
     /* Init scheduler */
@@ -351,16 +335,34 @@ void StartDefaultTask(void *argument) {
     /* USER CODE BEGIN 5 */
     log_init();
 
+    const static spi_device_config_t device_table[] = {
+        [SPI_PAYLOAD_THERMAL] =
+            {
+                .cs =
+                    {
+                        .cs_pin = CHIP_SELECT_Pin,
+                        .cs_port = CHIP_SELECT_GPIO_Port,
+                    },
+                .start_byte_timeout_ms = 500,
+                .max_send_retries = 3,
+            },
+    };
+
+    if (spi_service_init(&hspi1, device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
+        Error_Handler();
+    }
+
+
     /* Infinite loop */
     for (;;) {
         log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_ack2()));
-        osDelay(5000);
+        osDelay(500);
 
         log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo2()));
-        osDelay(5000);
+        osDelay(500);
 
         log_printf("SENDING RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_get_rtd2()));
-        osDelay(5000);
+        osDelay(500);
     }
     /* USER CODE END 5 */
 }
