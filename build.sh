@@ -5,16 +5,48 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/Debug"
 
-echo "Building STM32 project..."
+build() {
+    cd "$BUILD_DIR"
+    make -j7 all
+}
 
-cd "$BUILD_DIR"
+compile_db() {
+    cd "$BUILD_DIR"
 
-rm -f compile_commands.json
+    echo "Regenerating compile_commands.json..."
 
-bear -- make -j7 all
+    rm -f compile_commands.json
+    make clean
+    bear -- make -j7 all
 
-sed -i '' 's/-fcyclomatic-complexity//g' compile_commands.json
+    sed -i '' 's/-fcyclomatic-complexity//g' compile_commands.json
 
-echo ""
-echo "Build complete."
-echo "compile_commands.json updated."
+    echo "compile_commands.json updated."
+}
+
+flash() {
+    cd "$BUILD_DIR"
+
+    arm-none-eabi-objcopy -O binary apss_spi.elf apss_spi.bin
+
+    st-flash write apss_spi.bin 0x08000000
+}
+
+case "${1:-build}" in
+    build)
+        build
+        ;;
+    compile-db)
+        compile_db
+        ;;
+    flash)
+        flash
+        ;;
+    both)
+        build
+        flash
+        ;;
+    *)
+        echo "Usage: $0 [build|compile-db|flash|both]"
+        ;;
+esac
