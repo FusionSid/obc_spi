@@ -182,7 +182,7 @@ static void fsm_finish(spi_fsm_result_t result) {
 
 void spi_fsm_on_tx_complete_it(SPI_HandleTypeDef *hspi) {
     if (hspi != s_fsm.hspi || s_fsm.state != SPI_FSM_STATE_TX) {
-        return; /* stale/unexpected callback - ignore */
+        return;
     }
 
     if (s_fsm.expects_response) {

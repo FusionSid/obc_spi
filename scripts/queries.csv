@@ -1,9 +1,22 @@
-query,command,payload,tx_size,rx_size
-0,NOTUSED,THERMAL,0,1
-1,ACKNOWLEDGE,THERMAL,0,1
-2,ECHO,THERMAL,4,4
-3,RTD_DATA,THERMAL,0,8
-4,THERMISTOR_DATA,THERMAL,0,8
-5,TIME,THERMAL,0,4
-0,NOTUSED,CAMERA,0,0
-0,NOTUSED,RADIATION,0,0
+payload,query_code,command,tx_size,rx_size,expects_response,notes
+THERMAL,0x00,NOT_USED,0,0,false,"placeholder for now"
+THERMAL,0x01,ACKNOWLEDGE,0,1,true,"placeholder for now"
+THERMAL,0x02,ECHO,-1,-1,true,"placeholder for now"
+THERMAL,0x03,RTD_DATA,0,8,true,"placeholder for now"
+THERMAL,0x04,THERMISTOR_DATA,0,-1,true,"placeholder for now"
+THERMAL,0x05,TIME,0,-1,true,"placeholder for now"
+THERMAL,0x06,STORE_ALL_ERRORS,0,-1,true,"placeholder for now"
+THERMAL,0x07,GET_ERRORS,0,-1,false,"placeholder for now"
+RADIATION,0x00,NOT_USED,0,0,false,"placeholder for now"
+RADIATION,0x01,ACKNOWLEDGE,0,1,true,"placeholder for now"
+RADIATION,0x02,ECHO,-1,-1,true,"placeholder for now"
+RADIATION,0x03,EVENT_TIMESTAMPS,0,-1,true,"placeholder for now"
+RADIATION,0x04,ADC_VALUE,0,2,true,"placeholder for now"
+RADIATION,0x05,TMP112_TEMP,0,-1,true,"placeholder for now"
+RADIATION,0x06,EVENT_STATS,0,-1,true,"placeholder for now"
+RADIATION,0x07,WAVEFORM_CHUNK,1,-1,true,"placeholder for now"
+CAMERA,0x00,STARTUP,0,0,true,"placeholder for now"
+CAMERA,0x01,IMG_PARAMS,6,6,true,"placeholder for now"
+CAMERA,0x02,ECHO,-1,-1,true,"placeholder for now"
+CAMERA,0x03,SEND_SIZE,2,-1,true,"placeholder for now"
+CAMERA,0x04,SEND_IMAGE_PACKET,4000,-1,true,"placeholder for now"
