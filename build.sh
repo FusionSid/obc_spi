@@ -29,7 +29,7 @@ flash() {
 
     arm-none-eabi-objcopy -O binary apss_spi.elf apss_spi.bin
 
-    st-flash write apss_spi.bin 0x08000000
+    st-flash --connect-under-reset write apss_spi.bin 0x08000000
 }
 
 case "${1:-build}" in
