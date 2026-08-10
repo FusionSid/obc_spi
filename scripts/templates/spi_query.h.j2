@@ -1,0 +1,36 @@
+#pragma once
+
+typedef enum {
+{% for payload in payload_order %}
+    SPI_PAYLOAD_{{ payload }} = {{ payload_ids[payload] }},
+{% endfor %}
+    SPI_DEVICE__COUNT
+} spi_payload_t;
+
+{% for payload in payload_order %}
+#define SPI_{{ payload }}_QUERY_LIST \
+{% for q in queries[payload] %}
+    X(SPI_{{ payload }}_QUERY_{{ q.command }}, {{ q.query_code }}){{ " \\" if not loop.last else "" }}
+{% endfor %}
+
+{% endfor %}
+#define X(name, value) name = value,
+{% for payload in payload_order %}
+typedef enum { SPI_{{ payload }}_QUERY_LIST } spi_{{ payload.lower() }}_query_code_t;
+{% endfor %}
+#undef X
+
+{% for payload in payload_order %}
+static inline const char *spi_{{ payload.lower() }}_query_to_string(spi_{{ payload.lower() }}_query_code_t query) {
+    switch (query) {
+#define X(name, value) \
+    case name: \
+        return #name;
+        SPI_{{ payload }}_QUERY_LIST
+#undef X
+    default:
+        return "invalid query type";
+    }
+}
+
+{% endfor %}

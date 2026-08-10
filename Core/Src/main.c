@@ -18,12 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "log.h"
-#include "spi.h"
-#include "test_payload.h"
+#include "queries/spi_queries.h"
+#include "spi_transaction.h"
+#include "string.h"
 
 /* USER CODE END Includes */
 
@@ -34,7 +37,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,8 +48,13 @@
 
 COM_InitTypeDef BspCOMInit;
 
-SPI_HandleTypeDef hspi1;
-
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+    .name = "defaultTask",
+    .stack_size = 1024 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -55,7 +62,8 @@ SPI_HandleTypeDef hspi1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_SPI1_Init(void);
+void StartDefaultTask(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -81,7 +89,6 @@ int main(void) {
     HAL_Init();
 
     /* USER CODE BEGIN Init */
-
     /* USER CODE END Init */
 
     /* Configure the system clock */
@@ -93,10 +100,39 @@ int main(void) {
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-    spi_cs_high();
     /* USER CODE END 2 */
+
+    /* Init scheduler */
+    osKernelInitialize();
+
+    /* USER CODE BEGIN RTOS_MUTEX */
+    /* add mutexes, ... */
+    /* USER CODE END RTOS_MUTEX */
+
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* add semaphores, ... */
+    /* USER CODE END RTOS_SEMAPHORES */
+
+    /* USER CODE BEGIN RTOS_TIMERS */
+    /* start timers, add new ones, ... */
+    /* USER CODE END RTOS_TIMERS */
+
+    /* USER CODE BEGIN RTOS_QUEUES */
+    /* add queues, ... */
+    /* USER CODE END RTOS_QUEUES */
+
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+    /* USER CODE BEGIN RTOS_THREADS */
+    /* add threads, ... */
+    /* USER CODE END RTOS_THREADS */
+
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+    /* USER CODE END RTOS_EVENTS */
 
     /* Initialize leds */
     BSP_LED_Init(LED_GREEN);
@@ -116,6 +152,11 @@ int main(void) {
         Error_Handler();
     }
 
+    /* Start scheduler */
+    osKernelStart();
+
+    /* We should never get here as control is now taken by the scheduler */
+
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
@@ -123,14 +164,7 @@ int main(void) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        log_printf("SENDING ACK, Code: %s\r\n", spi_status_to_string(query_ack(&hspi1)));
-        HAL_Delay(1000);
 
-        log_printf("SENDING ECHO, Code: %s\r\n", spi_status_to_string(query_echo(&hspi1)));
-        HAL_Delay(1000);
-
-        log_printf("SENDING RTD, Code: %s\r\n", spi_status_to_string(query_getRTD(&hspi1)));
-        HAL_Delay(1000);
         /* USER CODE END 3 */
     }
 }
@@ -192,66 +226,6 @@ void SystemClock_Config(void) {
 }
 
 /**
- * @brief SPI1 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_SPI1_Init(void) {
-
-    /* USER CODE BEGIN SPI1_Init 0 */
-
-    /* USER CODE END SPI1_Init 0 */
-
-    /* USER CODE BEGIN SPI1_Init 1 */
-    /* Configure PLL3P = 32 MHz (HSI 64 / PLLM 4 * PLLN 10 / PLLP 5)
-     * so that SPI1 kernel clock = PLL3P / 256 = 125 kHz */
-    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI123;
-    PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
-    PeriphClkInitStruct.PLL3.PLL3M = 4;
-    PeriphClkInitStruct.PLL3.PLL3N = 10;
-    PeriphClkInitStruct.PLL3.PLL3P = 5;
-    PeriphClkInitStruct.PLL3.PLL3Q = 1;
-    PeriphClkInitStruct.PLL3.PLL3R = 2;
-    PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
-    PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOMEDIUM;
-    PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE END SPI1_Init 1 */
-    /* SPI1 parameter configuration*/
-    hspi1.Instance = SPI1;
-    hspi1.Init.Mode = SPI_MODE_MASTER;
-    hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-    hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-    hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-    hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-    hspi1.Init.NSS = SPI_NSS_SOFT;
-    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-    hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-    hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-    hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-    hspi1.Init.CRCPolynomial = 0x1021;
-    hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
-    hspi1.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
-    hspi1.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
-    hspi1.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
-    hspi1.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
-    hspi1.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
-    hspi1.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
-    hspi1.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
-    hspi1.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
-    hspi1.Init.IOSwap = SPI_IO_SWAP_DISABLE;
-    if (HAL_SPI_Init(&hspi1) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE BEGIN SPI1_Init 2 */
-
-    /* USER CODE END SPI1_Init 2 */
-}
-
-/**
  * @brief GPIO Initialization Function
  * @param None
  * @retval None
@@ -286,6 +260,102 @@ static void MX_GPIO_Init(void) {
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+ * @brief  Function implementing the defaultTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument) {
+    /* USER CODE BEGIN 5 */
+    log_init();
+
+    const static spi_device_config_t device_table[] = {
+        [SPI_PAYLOAD_THERMAL] =
+            {
+                .cs =
+                    {
+                        .cs_pin = CHIP_SELECT_Pin,
+                        .cs_port = CHIP_SELECT_GPIO_Port,
+                    },
+                .start_byte_timeout_ms = 500,
+                .max_send_retries = 3,
+            },
+    };
+
+    if (spi_service_init(device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
+        Error_Handler();
+    }
+
+    /* Infinite loop */
+    for (;;) {
+        thermal_acknowledge_outputs_t ack_data;
+        log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_acknowledge(&ack_data)));
+        log_printf("Data: %i", ack_data.ack);
+        osDelay(500);
+
+        uint8_t data_to_send[] = {67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+                                  67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+                                  67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+                                  67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67};
+        thermal_echo_inputs_t inputs = {.dataLen = sizeof(data_to_send) / sizeof(data_to_send[0])};
+        memcpy(inputs.data, data_to_send, inputs.dataLen);
+        thermal_echo_outputs_t outputs;
+        log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo(&inputs, &outputs)));
+        log_as_bytes(outputs.data, outputs.dataLen);
+        osDelay(500);
+
+        thermal_rtd_data_outputs_t rtd_data;
+        log_printf("SENDING GET RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_rtd_data(&rtd_data)));
+        log_printf("Data: %li %li %li %li", rtd_data.value[0], rtd_data.value[1], rtd_data.value[2], rtd_data.value[3]);
+        osDelay(500);
+    }
+    /* USER CODE END 5 */
+}
+
+/**
+ * @brief  Period elapsed callback in non blocking mode
+ * @note   This function is called  when TIM7 interrupt took place, inside
+ * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+ * a global variable "uwTick" used as application time base.
+ * @param  htim : TIM handle
+ * @retval None
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    /* USER CODE BEGIN Callback 0 */
+
+    /* USER CODE END Callback 0 */
+    if (htim->Instance == TIM7) {
+        HAL_IncTick();
+    }
+    /* USER CODE BEGIN Callback 1 */
+
+    /* USER CODE END Callback 1 */
+}
+
+/**
+ * @brief  Called by FreeRTOS if a task's stack overflows.
+ *         Put a breakpoint here - pxCurrentTCB / pcTaskName tells you which task.
+ */
+void vApplicationStackOverflowHook(osThreadId_t xTask, char *pcTaskName) {
+    (void)xTask;
+    (void)pcTaskName;
+    __disable_irq();
+    while (1) {
+    }
+}
+
+/**
+ * @brief  Called by FreeRTOS if pvPortMalloc() fails (heap exhausted).
+ *         Put a breakpoint here if you hit it - raise configTOTAL_HEAP_SIZE.
+ */
+void vApplicationMallocFailedHook(void) {
+    __disable_irq();
+    while (1) {
+    }
+}
 
 /**
  * @brief  This function is executed in case of error occurrence.

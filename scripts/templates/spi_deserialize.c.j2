@@ -1,0 +1,11 @@
+#warning "implement {{ q.command }} (query 0x{{ "%02X" % q.query_code }}) (delete line once done)"
+{% if q.notes %}// notes: {{ q.notes }}
+{% endif %}
+bool {{ q.deserialize_fn }}({{ q.outputs_type }} *outputs, const uint8_t *buffer, uint16_t buffer_len) {
+    // TODO: implement — {{ q.command }} (query 0x{{ "%02X" % q.query_code }})
+    // this must take buffer and unpack into {{ q.outputs_type }}.
+    (void)outputs;
+    (void)buffer;
+    (void)buffer_len;
+    return false;
+}

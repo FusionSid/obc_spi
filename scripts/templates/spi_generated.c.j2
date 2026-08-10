@@ -1,0 +1,58 @@
+// generated for payload {{ payload }} at time: 
+#include "queries/spi_{{ payload.lower() }}_generated.h"
+#include "spi_transaction.h"
+
+{% for q in queries %}
+{% if q.serialize_fn %}
+void {{ q.serialize_fn }}(const {{ q.inputs_type }} *inputs, uint8_t *buffer, uint16_t *buffer_len) {
+{% for line in q.serialize_body() %}
+    {{ line }}
+{% endfor %}
+}
+
+{% endif %}
+spi_response_code_t {{ q.function_name }}(
+{%- if q.inputs_type %}const {{ q.inputs_type }} *req{% if q.outputs_type %}, {% endif %}{% endif -%}
+{%- if q.outputs_type %}{{ q.outputs_type }} *resp{% endif -%}
+) {
+{% if q.serialize_fn %}
+    uint8_t tx_buf[SPI_PACKET_MAX_DATA_SIZE];
+    uint16_t tx_len = 0;
+    {{ q.serialize_fn }}(req, tx_buf, &tx_len);
+{% endif %}
+    spi_packet_t response;
+    spi_response_code_t status = spi_transact(
+        SPI_PAYLOAD_{{ payload }},
+        {{ q.query_enum }},
+{% if q.serialize_fn %}
+        tx_buf, tx_len,
+{% else %}
+        NULL, 0,
+{% endif %}
+        &response,
+        {{ "true" if q.expects_response else "false" }});
+
+    if (status != SPI_RESP_OK) {
+        return status;
+    }
+{% if not q.expects_response %}
+    return SPI_RESP_OK;
+{% elif q.deserialize_fn %}
+
+    if (!{{ q.deserialize_fn }}(resp, response.data, response.length)) {
+        return SPI_RESP_INVALID_ARGS;
+    }
+
+    return SPI_RESP_OK;
+{% else %}
+
+    // expected no response but got one
+    if (response.length != 0) { 
+        return SPI_RESP_INVALID_ARGS;
+    }
+
+    return SPI_RESP_OK;
+{% endif %}
+}
+
+{% endfor %}

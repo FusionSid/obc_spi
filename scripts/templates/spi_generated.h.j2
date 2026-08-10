@@ -1,0 +1,44 @@
+// generated for payload {{ payload }} at time: 
+#pragma once
+
+#include "spi_packet.h"
+#include "spi_query.h"
+#include "spi_status.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+{% for q in queries %}
+{% if q.inputs_type %}
+typedef struct {
+{% for line in struct_lines(q.inputs) %}
+{{ line }}
+{% endfor %}
+} {{ q.inputs_type }};
+
+{% endif %}
+{% if q.outputs_type %}
+typedef struct {
+{% for line in struct_lines(q.outputs) %}
+{{ line }}
+{% endfor %}
+} {{ q.outputs_type }};
+
+{% endif %}
+{% endfor %}
+{% for q in queries %}
+// {{ q.command }} (query 0x{{ "%02X" % q.query_code }}){% if q.notes %} — {{ q.notes }}{% endif %}
+
+{% if q.serialize_fn %}
+void {{ q.serialize_fn }}(const {{ q.inputs_type }} *inputs, uint8_t *buffer, uint16_t *buffer_len);
+{% endif %}
+{% if q.deserialize_fn %}
+bool {{ q.deserialize_fn }}({{ q.outputs_type }} *outputs, const uint8_t *buffer, uint16_t buffer_len);
+{% endif %}
+
+spi_response_code_t {{ q.function_name }}(
+{%- if q.inputs_type %}const {{ q.inputs_type }} *req{% if q.outputs_type %}, {% endif %}{% endif -%}
+{%- if q.outputs_type %}{{ q.outputs_type }} *resp{% endif -%}
+{%- if not q.inputs_type and not q.outputs_type %}void{% endif -%}
+);
+
+{% endfor %}
