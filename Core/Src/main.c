@@ -47,8 +47,6 @@
 
 COM_InitTypeDef BspCOMInit;
 
-SPI_HandleTypeDef hspi1;
-
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
@@ -63,7 +61,6 @@ const osThreadAttr_t defaultTask_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_SPI1_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -102,7 +99,6 @@ int main(void) {
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
     /* USER CODE END 2 */
 
@@ -229,66 +225,6 @@ void SystemClock_Config(void) {
 }
 
 /**
- * @brief SPI1 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_SPI1_Init(void) {
-
-    /* USER CODE BEGIN SPI1_Init 0 */
-
-    /* USER CODE END SPI1_Init 0 */
-
-    /* USER CODE BEGIN SPI1_Init 1 */
-    /* Configure PLL3P = 32 MHz (HSI 64 / PLLM 4 * PLLN 10 / PLLP 5)
-     * so that SPI1 kernel clock = PLL3P / 256 = 125 kHz */
-    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI123;
-    PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
-    PeriphClkInitStruct.PLL3.PLL3M = 4;
-    PeriphClkInitStruct.PLL3.PLL3N = 10;
-    PeriphClkInitStruct.PLL3.PLL3P = 5;
-    PeriphClkInitStruct.PLL3.PLL3Q = 1;
-    PeriphClkInitStruct.PLL3.PLL3R = 2;
-    PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
-    PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOMEDIUM;
-    PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE END SPI1_Init 1 */
-    /* SPI1 parameter configuration*/
-    hspi1.Instance = SPI1;
-    hspi1.Init.Mode = SPI_MODE_MASTER;
-    hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-    hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-    hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-    hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-    hspi1.Init.NSS = SPI_NSS_SOFT;
-    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-    hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-    hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-    hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-    hspi1.Init.CRCPolynomial = 0x1021;
-    hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
-    hspi1.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
-    hspi1.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
-    hspi1.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
-    hspi1.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
-    hspi1.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
-    hspi1.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
-    hspi1.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
-    hspi1.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
-    hspi1.Init.IOSwap = SPI_IO_SWAP_DISABLE;
-    if (HAL_SPI_Init(&hspi1) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE BEGIN SPI1_Init 2 */
-
-    /* USER CODE END SPI1_Init 2 */
-}
-
-/**
  * @brief GPIO Initialization Function
  * @param None
  * @retval None
@@ -348,7 +284,7 @@ void StartDefaultTask(void *argument) {
             },
     };
 
-    if (spi_service_init(&hspi1, device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
+    if (spi_service_init(device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
         Error_Handler();
     }
 

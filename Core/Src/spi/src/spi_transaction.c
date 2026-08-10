@@ -1,6 +1,5 @@
 #include "spi_transaction.h"
 #include "cmsis_os2.h"
-#include "log.h"
 #include <stdbool.h>
 #include <string.h>
 
@@ -186,20 +185,22 @@ static spi_response_code_t spi_execute(internal_spi_request_t *req) {
     return response_code;
 }
 
-spi_status_t spi_service_init(SPI_HandleTypeDef *hspi, const spi_device_config_t *device_table, uint8_t device_count) {
-    if (hspi == NULL || device_table == NULL || device_count == 0) {
+spi_status_t spi_service_init(const spi_device_config_t *device_table, uint8_t device_count) {
+    if (device_table == NULL || device_count == 0) {
         return SPI_ERR_INVALID_ARGS;
     }
+
+    if (spi_hal_init(spi_fsm_on_tx_complete_it, spi_fsm_on_rx_complete_it, spi_fsm_on_error_it) != SPI_WORKED) {
+        return SPI_ERR_HAL;
+    }
+
+    SPI_HandleTypeDef *hspi = spi_hal_get_handle();
 
     s_hspi = hspi;
     s_device_table = device_table;
     s_device_count = device_count;
 
     if (spi_fsm_init(hspi) != SPI_WORKED) {
-        return SPI_ERR_HAL;
-    }
-
-    if (spi_hal_init(hspi, spi_fsm_on_tx_complete_it, spi_fsm_on_rx_complete_it, spi_fsm_on_error_it) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
 
