@@ -19,10 +19,12 @@ typedef enum {
     X(SPI_RADIATION_QUERY_ADC_VALUE, 4)
 
 #define SPI_CAMERA_QUERY_LIST                                                                                          \
-    X(SPI_CAMERA_QUERY_STARTUP, 0)                                                                                     \
-    X(SPI_CAMERA_QUERY_IMG_PARAMS, 1)                                                                                  \
+    X(SPI_CAMERA_QUERY_HANDSHAKE, 0)                                                                                   \
+    X(SPI_CAMERA_QUERY_HEALTH_CHECK, 1)                                                                                \
+    X(SPI_CAMERA_QUERY_IMG_PARAMS, 2)                                                                                  \
     X(SPI_CAMERA_QUERY_GET_SIZE, 3)                                                                                    \
-    X(SPI_CAMERA_QUERY_SEND_IMAGE_PACKET, 4)
+    X(SPI_CAMERA_QUERY_GET_PACKET, 4)                                                                                  \
+    X(SPI_CAMERA_QUERY_SHUTDOWN, 5)
 
 #define X(name, value) name = value,
 typedef enum { SPI_THERMAL_QUERY_LIST } spi_thermal_query_code_t;
