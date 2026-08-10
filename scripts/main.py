@@ -3,58 +3,71 @@ import os
 import subprocess
 from typing import Final
 
+from datatypes import payload_c_struct_lines
 from jinja2 import Environment, FileSystemLoader
+from query import Query
+
+# this script's code is heavily inspired from apss2's https://github.com/APSS-KESSLER/apss-2-scripts
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(SCRIPT_DIR, "templates")
 CSV_PATH = os.path.join(SCRIPT_DIR, "queries.csv")
+
+INCLUDE_DIR = os.path.join(SCRIPT_DIR, "..", "Core", "Src", "spi", "include", "queries")
+SRC_DIR = os.path.join(SCRIPT_DIR, "..", "Core", "Src", "spi", "src", "queries")
 
 PAYLOAD_IDS: Final = {
     "THERMAL": 1,
     "RADIATION": 2,
     "CAMERA": 3,
 }
-PAYLOAD_ORDER: Final = list(PAYLOAD_IDS.keys())
-
-OUTPUTS: Final = {
-    "spi_query.h.j2": "Core/Src/spi/include/spi_query.h",
-    "spi_queries_raw.h.j2": "Core/Src/spi/include/spi_queries_raw.h",
-    "spi_queries_raw.c.j2": "Core/Src/spi/src/spi_queries_raw.c",
-}
 
 
-def parse_int(value: str) -> int:
-    return int(value.strip(), 0)
+def load_queries() -> dict[str, list[Query]]:
+    queries: dict[str, list[Query]] = {p: [] for p in PAYLOAD_IDS}
 
-
-def parse_bool(value: str) -> bool:
-    return value.strip().lower() == "true"
-
-
-def load_queries() -> dict:
-    queries = {payload: [] for payload in PAYLOAD_ORDER}
-
-    with open(CSV_PATH) as f:
-        reader = csv.DictReader(f)
-
-        for row in reader:
+    with open(CSV_PATH, newline="") as f:
+        for row in csv.DictReader(f):
             payload = row["payload"].strip().upper()
+            queries[payload].append(Query.from_csv_row(row))
 
-            queries[payload].append(
-                {
-                    "query_code": parse_int(row["query_code"]),
-                    "command": row["command"].strip().upper(),
-                    "tx_size": parse_int(row["tx_size"]),
-                    "rx_size": parse_int(row["rx_size"]),
-                    "expects_response": parse_bool(row["expects_response"]),
-                    "notes": row.get("notes", "").strip(),
-                }
-            )
-
-    for payload in PAYLOAD_ORDER:
-        queries[payload].sort(key=lambda q: q["query_code"])
+    for payload in PAYLOAD_IDS:
+        queries[payload].sort(key=lambda q: q.query_code)
 
     return queries
+
+
+def write_file(path: str, content: str) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
+    print(f"wrote {os.path.relpath(path, SCRIPT_DIR)}")
+
+
+def create_deserialize_functions(
+    payload: str, queries: list[Query], env: Environment
+) -> list[str]:
+    written = []
+    template = env.get_template("spi_deserialize.c.j2")
+    path = os.path.join(SRC_DIR, f"spi_{payload.lower()}_deserialize.c")
+
+    if os.path.exists(path):
+        return written
+
+    body = []
+    body.append(f'#include "queries/spi_{payload.lower()}_generated.h"')
+    body.append("")
+    for q in queries:
+        if not q.deserialize_fn:
+            continue
+        body.append(template.render(q=q))
+
+    if not body:
+        return written
+
+    write_file(path, "\n".join(body))
+    written.append(path)
+    return written
 
 
 def main() -> None:
@@ -65,26 +78,40 @@ def main() -> None:
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    env.globals["struct_lines"] = (
+        payload_c_struct_lines  # ty: ignore[invalid-assignment]
+    )
 
     written_paths = []
 
-    for template_name, output_relative_path in OUTPUTS.items():
-        template = env.get_template(template_name)
+    query_h = env.get_template("spi_query.h.j2").render(
+        queries=queries, payload_order=list(PAYLOAD_IDS.keys()), payload_ids=PAYLOAD_IDS
+    )
+    p = os.path.join(INCLUDE_DIR, "..", "spi_query.h")
+    write_file(p, query_h)
+    written_paths.append(p)
 
-        output_path = os.path.join(SCRIPT_DIR, "..", output_relative_path)
-        with open(output_path, "w") as f:
-            f.write(
-                template.render(
-                    queries=queries,
-                    payload_order=PAYLOAD_ORDER,
-                    payload_ids=PAYLOAD_IDS,
-                )
-            )
+    for payload in PAYLOAD_IDS:
+        rows = queries[payload]
 
-        written_paths.append(output_path)
-        print(f"wrote {output_relative_path}")
+        header = env.get_template("spi_generated.h.j2").render(
+            payload=payload, queries=rows
+        )
+        h_path = os.path.join(INCLUDE_DIR, f"spi_{payload.lower()}_generated.h")
+        write_file(h_path, header)
+        written_paths.append(h_path)
+
+        source = env.get_template("spi_generated.c.j2").render(
+            payload=payload, queries=rows
+        )
+        c_path = os.path.join(SRC_DIR, f"spi_{payload.lower()}_generated.c")
+        write_file(c_path, source)
+        written_paths.append(c_path)
+
+        written_paths += create_deserialize_functions(payload, rows, env)
 
     subprocess.run(["clang-format", "-i", *written_paths], check=True)
+    print("formatted the code with clang format")
 
 
 if __name__ == "__main__":

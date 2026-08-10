@@ -10,12 +10,10 @@ typedef enum {
 {% for payload in payload_order %}
 #define SPI_{{ payload }}_QUERY_LIST \
 {% for q in queries[payload] %}
-    X(SPI_{{ payload }}_QUERY_{{ q.command }}, {{ q.query_code }}) \
-{% endfor %}
-    X(SPI_{{ payload }}_QUERY__COUNT, {{ queries[payload]|length }})
-    
+    X(SPI_{{ payload }}_QUERY_{{ q.command }}, {{ q.query_code }}){{ " \\" if not loop.last else "" }}
 {% endfor %}
 
+{% endfor %}
 #define X(name, value) name = value,
 {% for payload in payload_order %}
 typedef enum { SPI_{{ payload }}_QUERY_LIST } spi_{{ payload.lower() }}_query_code_t;
@@ -36,13 +34,3 @@ static inline const char *spi_{{ payload.lower() }}_query_to_string(spi_{{ paylo
 }
 
 {% endfor %}
-static inline const char *spi_query_to_string(spi_payload_t payload, int query) {
-    switch (payload) {
-{% for payload in payload_order %}
-    case SPI_PAYLOAD_{{ payload }}:
-        return spi_{{ payload.lower() }}_query_to_string(query);
-{% endfor %}
-    default:
-        return "invalid payload";
-    }
-}

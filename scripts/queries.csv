@@ -1,22 +1,15 @@
-payload,query_code,command,tx_size,rx_size,expects_response,notes
-THERMAL,0x00,NOT_USED,0,0,false,"placeholder for now"
-THERMAL,0x01,ACKNOWLEDGE,0,1,true,"placeholder for now"
-THERMAL,0x02,ECHO,-1,-1,true,"placeholder for now"
-THERMAL,0x03,RTD_DATA,0,8,true,"placeholder for now"
-THERMAL,0x04,THERMISTOR_DATA,0,-1,true,"placeholder for now"
-THERMAL,0x05,TIME,0,-1,true,"placeholder for now"
-THERMAL,0x06,STORE_ALL_ERRORS,0,-1,true,"placeholder for now"
-THERMAL,0x07,GET_ERRORS,0,-1,false,"placeholder for now"
-RADIATION,0x00,NOT_USED,0,0,false,"placeholder for now"
-RADIATION,0x01,ACKNOWLEDGE,0,1,true,"placeholder for now"
-RADIATION,0x02,ECHO,-1,-1,true,"placeholder for now"
-RADIATION,0x03,EVENT_TIMESTAMPS,0,-1,true,"placeholder for now"
-RADIATION,0x04,ADC_VALUE,0,2,true,"placeholder for now"
-RADIATION,0x05,TMP112_TEMP,0,-1,true,"placeholder for now"
-RADIATION,0x06,EVENT_STATS,0,-1,true,"placeholder for now"
-RADIATION,0x07,WAVEFORM_CHUNK,1,-1,true,"placeholder for now"
-CAMERA,0x00,STARTUP,0,0,true,"placeholder for now"
-CAMERA,0x01,IMG_PARAMS,6,6,true,"placeholder for now"
-CAMERA,0x02,ECHO,-1,-1,true,"placeholder for now"
-CAMERA,0x03,SEND_SIZE,2,-1,true,"placeholder for now"
-CAMERA,0x04,SEND_IMAGE_PACKET,4000,-1,true,"placeholder for now"
+payload,query_code,command,inputs,outputs,notes
+THERMAL,0x01,ACKNOWLEDGE,,u8 ack,
+THERMAL,0x02,ECHO,u8[0..=676] data,u8[0..=676] data,echo query
+THERMAL,0x03,RTD_DATA,,u16[4] value,
+RADIATION,0x01,ACKNOWLEDGE,,u8 ack,
+RADIATION,0x02,ECHO,u8[0..=4090] data,u8[0..=4090] data,echo query
+RADIATION,0x03,EVENT_TIMESTAMPS,,u32[0..=10] timestamps,dequeues up to 10 timestamps
+RADIATION,0x04,ADC_VALUE,,u16 value,
+CAMERA,0x00,STARTUP,,,empty handshake
+CAMERA,0x01,IMG_PARAMS,,"u8 cam_chosen
+u16 width
+u16 height
+u8 quality",
+CAMERA,0x03,GET_SIZE,None,,
+CAMERA,0x04,SEND_IMAGE_PACKET,u8[0..=4000] data,None,up to 4000 bytes of image data
