@@ -21,7 +21,10 @@ bool deserialize_camera_get_size(camera_get_size_outputs_t *outputs, const uint8
 
 // notes: 0 = get next packet, 1 = resend packet
 bool deserialize_camera_get_packet(camera_get_packet_outputs_t *outputs, const uint8_t *buffer, uint16_t buffer_len) {
+    if (buffer_len > sizeof(outputs->data)) {
+        return false;
+    }
     memcpy(outputs->data, buffer, buffer_len);
     outputs->dataLen = buffer_len;
-    return false;
+    return true;
 }

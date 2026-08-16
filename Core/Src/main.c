@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "log.h"
 #include "queries/spi_queries.h"
+#include "queries/take_image.h"
 #include "spi_transaction.h"
 #include "string.h"
 
@@ -309,8 +310,19 @@ void StartDefaultTask(void *argument) {
 
         thermal_rtd_data_outputs_t rtd_data = {0};
         log_printf("SENDING GET RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_rtd_data(&rtd_data)));
-        log_printf("Data: %li %li %li %li\r\n", rtd_data.value[0], rtd_data.value[1], rtd_data.value[2], rtd_data.value[3]);
+        log_printf("Data: %li %li %li %li\r\n", rtd_data.value[0], rtd_data.value[1], rtd_data.value[2],
+                   rtd_data.value[3]);
         osDelay(500);
+
+        camera_img_params_inputs_t params = {
+            .cam_chosen = 0,
+            .width = 1920,
+            .height = 1080,
+            .quality = 67,
+        };
+        uint8_t buffer[65535];
+        uint16_t buffer_size;
+        take_image(buffer, sizeof(buffer), &buffer_size, &params);
     }
     /* USER CODE END 5 */
 }
