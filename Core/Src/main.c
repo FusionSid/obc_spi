@@ -273,22 +273,43 @@ void StartDefaultTask(void *argument) {
     /* USER CODE BEGIN 5 */
     log_init();
 
-    const static spi_device_config_t device_table[] = {
+    static const spi_device_config_t device_table[SPI_DEVICE__COUNT] = {
         [SPI_PAYLOAD_THERMAL] =
             {
                 .cs =
                     {
-                        .cs_pin = CHIP_SELECT_Pin,
-                        .cs_port = CHIP_SELECT_GPIO_Port,
+                        .cs_pin = GPIO_PIN_6,
+                        .cs_port = SPI_GPIO_PORT,
                     },
                 .start_byte_timeout_ms = 500,
                 .max_send_retries = 3,
+                .enabled = true,
+            },
+        [SPI_PAYLOAD_RADIATION] =
+            {
+                .cs =
+                    {
+                        .cs_pin = GPIO_PIN_6,
+                        .cs_port = SPI_GPIO_PORT,
+                    },
+                .start_byte_timeout_ms = 500,
+                .max_send_retries = 3,
+                .enabled = false,
+            },
+        [SPI_PAYLOAD_CAMERA] =
+            {
+                .cs =
+                    {
+                        .cs_pin = GPIO_PIN_6,
+                        .cs_port = SPI_GPIO_PORT,
+                    },
+                .start_byte_timeout_ms = 500,
+                .max_send_retries = 3,
+                .enabled = false,
             },
     };
 
-    if (spi_service_init(device_table, SPI_DEVICE__COUNT) != SPI_WORKED) {
-        Error_Handler();
-    }
+    spi_service_init(device_table, SPI_DEVICE__COUNT);
 
     /* Infinite loop */
     for (;;) {

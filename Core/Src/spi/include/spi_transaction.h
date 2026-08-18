@@ -9,6 +9,7 @@ typedef struct {
     spi_cs_config_t cs;
     uint32_t start_byte_timeout_ms;
     uint8_t max_send_retries;
+    bool enabled;
 } spi_device_config_t;
 
 spi_status_t spi_service_init(const spi_device_config_t *device_table, uint8_t device_count);

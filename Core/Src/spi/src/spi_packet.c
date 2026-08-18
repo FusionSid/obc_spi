@@ -68,6 +68,11 @@ spi_status_t spi_packet_parse(const uint8_t *raw_packet, uint16_t raw_packet_len
 
     uint16_t data_length =
         ((uint16_t)raw_packet[SPI_PACKET_OFFSET_LEN_L]) | ((uint16_t)raw_packet[SPI_PACKET_OFFSET_LEN_H] << 8);
+
+    if (data_length > SPI_PACKET_MAX_DATA_SIZE) {
+        return SPI_ERR_OVERFLOW;
+    }
+
     uint16_t expected_size = SPI_PACKET_HEADER_SIZE + data_length + SPI_PACKET_FOOTER_SIZE;
 
     if (expected_size != raw_packet_length) {

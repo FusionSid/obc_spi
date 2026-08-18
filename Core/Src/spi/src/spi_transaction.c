@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define SPI_REQ_QUEUE_LEN 8
-#define SPI_TASK_STACK_SZ 3072
+#define SPI_TASK_STACK_SIZE 3072
 #define SPI_TASK_PRIORITY osPriorityNormal
 
 #define WORKER_EVENT_RX_DONE (1UL << 0)
@@ -84,7 +84,7 @@ spi_response_code_t spi_transact(spi_payload_t device, uint8_t query_code, const
         return SPI_RESP_BUS_ERROR;
     }
 
-    uint32_t flags = osEventFlagsWait(context.event, 1, osFlagsWaitAny, 5000);
+    uint32_t flags = osEventFlagsWait(context.event, 1, osFlagsWaitAny, 15000);
 
     osEventFlagsDelete(context.event);
 
@@ -190,6 +190,13 @@ spi_status_t spi_service_init(const spi_device_config_t *device_table, uint8_t d
         return SPI_ERR_INVALID_ARGS;
     }
 
+    for (uint8_t i = 1; i < device_count; i++) {
+        if (!device_table[i].enabled) {
+            continue;
+        }
+        spi_hal_cs_init(&device_table[i].cs);
+    }
+
     if (spi_hal_init(spi_fsm_on_tx_complete_it, spi_fsm_on_rx_complete_it, spi_fsm_on_error_it) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
@@ -211,7 +218,7 @@ spi_status_t spi_service_init(const spi_device_config_t *device_table, uint8_t d
 
     const osThreadAttr_t task_attr = {
         .name = "spi_task",
-        .stack_size = SPI_TASK_STACK_SZ,
+        .stack_size = SPI_TASK_STACK_SIZE,
         .priority = SPI_TASK_PRIORITY,
     };
 

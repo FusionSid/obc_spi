@@ -91,8 +91,6 @@ spi_status_t spi_fsm_send(const spi_cs_config_t *cs, uint8_t query, const uint8_
     s_fsm.last_valid = false;
     s_fsm.state = SPI_FSM_STATE_TX;
 
-    log_as_bytes(s_fsm.tx_buf, s_fsm.tx_len);
-
     spi_device_select(cs);
 
     if (spi_hal_transmit_it(s_fsm.hspi, s_fsm.tx_buf, s_fsm.tx_len) != HAL_OK) {
