@@ -1,6 +1,5 @@
 #include "spi_fsm.h"
 #include "cmsis_os2.h"
-#include "log.h"
 #include <string.h>
 
 #ifdef NEW_PACKET_FORMAT

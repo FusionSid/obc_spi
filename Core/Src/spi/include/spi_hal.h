@@ -21,7 +21,7 @@ void spi_device_deselect(const spi_cs_config_t *cs);
 spi_status_t spi_hal_init(void (*tx_cb)(SPI_HandleTypeDef *hspi), void (*rxtx_cb)(SPI_HandleTypeDef *hspi),
                           void (*err_cb)(SPI_HandleTypeDef *hspi));
 void spi_hal_msp_init(SPI_HandleTypeDef *hspi);
-
+void spi_hal_msp_deinit(SPI_HandleTypeDef *hspi);
 void spi_hal_cs_init(const spi_cs_config_t *cs);
 spi_status_t spi_hal_reinit(SPI_HandleTypeDef *hspi);
 
