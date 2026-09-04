@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define SPI_REQ_QUEUE_LEN 8
-#define SPI_TASK_STACK_SIZE 3072
+#define SPI_TASK_STACK_SIZE 3072 * 6
 #define SPI_TASK_PRIORITY osPriorityNormal
 
 #define WORKER_EVENT_RX_DONE (1UL << 0)

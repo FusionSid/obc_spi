@@ -2,7 +2,8 @@
 #include "main.h"
 #include <string.h>
 
-static void take_image_start(take_image_ctx_t *ctx, const camera_img_params_inputs_t *params, uint8_t *buf, uint32_t buf_cap) {
+static void take_image_start(take_image_ctx_t *ctx, const camera_img_params_inputs_t *params, uint8_t *buf,
+                             uint32_t buf_cap) {
     memset(ctx, 0, sizeof(*ctx));
     ctx->params = *params;
     ctx->buf = buf;
@@ -72,7 +73,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
     case IMG_GET_PACKET:
         if (havent_timeout_yet(ctx, now)) {
             camera_get_packet_inputs_t req = {.packet_operation = ctx->packet_op};
-            camera_get_packet_outputs_t pkt;
+            static camera_get_packet_outputs_t pkt;
 
             if (camera_query_get_packet(&req, &pkt) == SPI_RESP_OK && pkt.dataLen > 0 &&
                 ctx->bytes_received + pkt.dataLen <= ctx->buf_cap) {

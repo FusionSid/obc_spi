@@ -53,7 +53,7 @@ COM_InitTypeDef BspCOMInit;
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
     .name = "defaultTask",
-    .stack_size = 1024 * 4,
+    .stack_size = 1024 * 8,
     .priority = (osPriority_t)osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
@@ -311,6 +311,8 @@ void StartDefaultTask(void *argument) {
 
     spi_service_init(device_table, SPI_DEVICE__COUNT);
 
+    static uint8_t buffer[65535];
+
     /* Infinite loop */
     for (;;) {
         thermal_acknowledge_outputs_t ack_data = {0};
@@ -341,7 +343,6 @@ void StartDefaultTask(void *argument) {
             .height = 1080,
             .quality = 67,
         };
-        uint8_t buffer[65535];
         uint16_t buffer_size;
         take_image(buffer, sizeof(buffer), &buffer_size, &params);
     }
