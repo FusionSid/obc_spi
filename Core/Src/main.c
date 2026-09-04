@@ -278,8 +278,8 @@ void StartDefaultTask(void *argument) {
             {
                 .cs =
                     {
-                        .cs_pin = GPIO_PIN_6,
-                        .cs_port = SPI_GPIO_PORT,
+                        .cs_pin =CHIP_SELECT_Pin ,
+                        .cs_port = CHIP_SELECT_GPIO_Port,
                     },
                 .start_byte_timeout_ms = 500,
                 .max_send_retries = 3,
@@ -289,8 +289,8 @@ void StartDefaultTask(void *argument) {
             {
                 .cs =
                     {
-                        .cs_pin = GPIO_PIN_6,
-                        .cs_port = SPI_GPIO_PORT,
+                        .cs_pin = CHIP_SELECT_Pin,
+                        .cs_port = CHIP_SELECT_GPIO_Port,
                     },
                 .start_byte_timeout_ms = 500,
                 .max_send_retries = 3,
@@ -300,8 +300,8 @@ void StartDefaultTask(void *argument) {
             {
                 .cs =
                     {
-                        .cs_pin = GPIO_PIN_6,
-                        .cs_port = SPI_GPIO_PORT,
+                        .cs_pin = CHIP_SELECT_Pin,
+                        .cs_port = CHIP_SELECT_GPIO_Port,
                     },
                 .start_byte_timeout_ms = 500,
                 .max_send_retries = 3,

@@ -4,12 +4,6 @@
 #include "stm32h7xx_hal.h"
 #include <stdint.h>
 
-#define SPI_SPI_NUMBER (SPI5)
-#define SPI_GPIO_PORT (GPIOF)
-#define SPI_SCK_PIN (GPIO_PIN_7)
-#define SPI_MISO_PIN (GPIO_PIN_8)
-#define SPI_MOSI_PIN (GPIO_PIN_9)
-
 typedef struct {
     GPIO_TypeDef *cs_port;
     uint16_t cs_pin;

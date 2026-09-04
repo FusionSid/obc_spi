@@ -95,23 +95,31 @@ HAL_StatusTypeDef spi_hal_receive_it(SPI_HandleTypeDef *hspi, uint8_t *rx_data, 
 }
 
 static spi_status_t mx_spi_init(void) {
-    // RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-    // PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI45;
-    // PeriphClkInitStruct.Spi45ClockSelection = RCC_SPI45CLKSOURCE_PLL3;
-    // PeriphClkInitStruct.PLL3.PLL3M = 4;
-    // PeriphClkInitStruct.PLL3.PLL3N = 10;
-    // PeriphClkInitStruct.PLL3.PLL3P = 5;
-    // PeriphClkInitStruct.PLL3.PLL3Q = 1;
-    // PeriphClkInitStruct.PLL3.PLL3R = 2;
-    // PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
-    // PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOMEDIUM;
-    // PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
 
-    // if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-    //     return SPI_ERR_HAL;
-    // }
+    /* USER CODE BEGIN SPI1_Init 0 */
 
-    s_hspi.Instance = SPI_SPI_NUMBER;
+    /* USER CODE END SPI1_Init 0 */
+
+    /* USER CODE BEGIN SPI1_Init 1 */
+    /* Configure PLL3P = 32 MHz (HSI 64 / PLLM 4 * PLLN 10 / PLLP 5)
+     * so that SPI1 kernel clock = PLL3P / 256 = 125 kHz */
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI123;
+    PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
+    PeriphClkInitStruct.PLL3.PLL3M = 4;
+    PeriphClkInitStruct.PLL3.PLL3N = 10;
+    PeriphClkInitStruct.PLL3.PLL3P = 5;
+    PeriphClkInitStruct.PLL3.PLL3Q = 1;
+    PeriphClkInitStruct.PLL3.PLL3R = 2;
+    PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
+    PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOMEDIUM;
+    PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
+        return SPI_ERR_HAL;
+    }
+    /* USER CODE END SPI1_Init 1 */
+    /* SPI1 parameter configuration*/
+    s_hspi.Instance = SPI1;
     s_hspi.Init.Mode = SPI_MODE_MASTER;
     s_hspi.Init.Direction = SPI_DIRECTION_2LINES;
     s_hspi.Init.DataSize = SPI_DATASIZE_8BIT;
@@ -120,46 +128,24 @@ static spi_status_t mx_spi_init(void) {
     s_hspi.Init.NSS = SPI_NSS_SOFT;
     s_hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
     s_hspi.Init.FirstBit = SPI_FIRSTBIT_MSB;
+    s_hspi.Init.TIMode = SPI_TIMODE_DISABLE;
     s_hspi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
     s_hspi.Init.CRCPolynomial = 0x1021;
-    s_hspi.Init.CRCLength = SPI_CRC_LENGTH_16BIT;
+    s_hspi.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
     s_hspi.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
-    s_hspi.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ONE_PATTERN;
-    s_hspi.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ONE_PATTERN;
-    s_hspi.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_15CYCLE;
-
+    s_hspi.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
+    s_hspi.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+    s_hspi.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+    s_hspi.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
+    s_hspi.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
+    s_hspi.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
+    s_hspi.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
+    s_hspi.Init.IOSwap = SPI_IO_SWAP_DISABLE;
     if (HAL_SPI_Init(&s_hspi) != HAL_OK) {
         return SPI_ERR_HAL;
     }
 
     return SPI_WORKED;
-}
-
-// is called by HAL_SPI_MspInit
-void spi_hal_msp_init(SPI_HandleTypeDef *hspi) {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    __HAL_RCC_SPI5_CLK_ENABLE();
-    __HAL_RCC_GPIOF_CLK_ENABLE();
-
-    GPIO_InitStruct.Pin = SPI_SCK_PIN | SPI_MISO_PIN | SPI_MOSI_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF5_SPI5;
-    HAL_GPIO_Init(SPI_GPIO_PORT, &GPIO_InitStruct);
-
-    HAL_NVIC_SetPriority(SPI5_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(SPI5_IRQn);
-}
-
-// should be called by HAL_SPI_MspDeInit
-void spi_hal_msp_deinit(SPI_HandleTypeDef *hspi) {
-    __HAL_RCC_SPI5_CLK_DISABLE();
-
-    HAL_GPIO_DeInit(SPI_GPIO_PORT, SPI_SCK_PIN | SPI_MISO_PIN | SPI_MOSI_PIN);
-
-    HAL_NVIC_DisableIRQ(SPI5_IRQn);
 }
 
 // SPI1_IRQHandler should call this guy:
