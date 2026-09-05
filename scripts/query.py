@@ -89,3 +89,14 @@ class Query:
             lines.append("*buffer_len = offset;")
 
         return lines
+
+    def default_deserialize_body(self) -> str:
+        lines = [
+            f"// TODO: implement - {self.command} (query 0x{self.query_code:02X})",
+            f"// this must take buffer and unpack into {self.outputs_type}.",
+            "(void)outputs;",
+            "(void)buffer;",
+            "(void)buffer_len;",
+            "return false;",
+        ]
+        return "\n".join("    " + line for line in lines)
