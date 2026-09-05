@@ -273,7 +273,7 @@ void StartDefaultTask(void *argument) {
     /* USER CODE BEGIN 5 */
     log_init();
 
-    static const spi_device_config_t device_table[SPI_DEVICE__COUNT] = {
+    static const spi_device_config_t device_table[] = {
         [SPI_PAYLOAD_THERMAL] =
             {
                 .cs =
