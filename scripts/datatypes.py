@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-PRIM_SIZES = {"u8": 1, "i8": 1, "u16": 2, "i16": 2, "u32": 4, "i32": 4}
+PRIM_SIZES = {"u8": 1, "i8": 1, "u16": 2, "i16": 2, "u32": 4, "i32": 4, "bool": 1}
 PRIM_C_TYPES = {
     "u8": "uint8_t",
     "i8": "int8_t",
@@ -9,10 +9,12 @@ PRIM_C_TYPES = {
     "i16": "int16_t",
     "u32": "uint32_t",
     "i32": "int32_t",
+    "bool": "bool",
 }
 
-_FIELD_RE = re.compile(r"^([ui](?:8|16|32))(?:\[(\d+)\])?\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
-_ARRAY_RE = re.compile(r"^([ui](?:8|16|32))\[0\.\.=(\d+)\]\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
+_PRIM_ALT = r"(?:[ui](?:8|16|32)|bool)"
+_FIELD_RE = re.compile(rf"^({_PRIM_ALT})(?:\[(\d+)\])?\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
+_ARRAY_RE = re.compile(rf"^({_PRIM_ALT})\[0\.\.=(\d+)\]\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
 
 
 @dataclass
