@@ -42,7 +42,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
     case IMG_HANDSHAKE:
         if (havent_timeout_yet(ctx, now) && camera_query_handshake() == SPI_RESP_OK) {
             log_printf("switching to health check state\r\n");
-            next_state(ctx, IMG_HEALTH_CHECK);
+            next_state(ctx, IMG_HEALTH_CHECK); // handshake worked, move to health check
         }
         break;
 
@@ -50,8 +50,9 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
         if (havent_timeout_yet(ctx, now)) {
             camera_health_check_outputs_t hc;
             if (camera_query_health_check(&hc) == SPI_RESP_OK && hc.status == 0) {
+                // health check worked, and status is 0 meaning successfull capture
                 log_printf("switching to img params state\r\n");
-                next_state(ctx, IMG_PARAMS);
+                next_state(ctx, IMG_PARAMS); // move to img params
             }
         }
         break;
@@ -59,19 +60,20 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
     case IMG_PARAMS:
         if (havent_timeout_yet(ctx, now) && camera_query_img_params(&ctx->params) == SPI_RESP_OK) {
             log_printf("switching to get size state\r\n");
-            next_state(ctx, IMG_GET_SIZE);
+            next_state(ctx, IMG_GET_SIZE); // image parms query worked, moved to get size
         }
         break;
 
     case IMG_GET_SIZE:
         if (havent_timeout_yet(ctx, now)) {
             camera_get_size_outputs_t sz;
+            // get the size of image, and make sure its non zero, and can fit in provided buffer
             if (camera_query_get_size(&sz) == SPI_RESP_OK && sz.image_size > 0 && sz.image_size <= ctx->buf_cap) {
                 ctx->image_size = sz.image_size;
                 ctx->bytes_received = 0;
-                ctx->packet_op = 0;
+                ctx->packet_op = 0; // meaning we want next packet
                 log_printf("Switching to get packet state\r\n");
-                next_state(ctx, IMG_GET_PACKET);
+                next_state(ctx, IMG_GET_PACKET); // move to get packet state
             }
         }
         break;
@@ -83,19 +85,19 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
 
             log_printf("Requesting Packet, Packet Op: %i\r\n", ctx->packet_op);
             if (camera_query_get_packet(&req, &pkt) == SPI_RESP_OK && pkt.dataLen > 0 &&
-                ctx->bytes_received + pkt.dataLen <= ctx->buf_cap) {
-                memcpy(ctx->buf + ctx->bytes_received, pkt.data, pkt.dataLen);
-                ctx->bytes_received += pkt.dataLen;
-                ctx->packet_op = 0;
+                ctx->bytes_received + pkt.dataLen <= ctx->buf_cap) {           // if we successfully got an image packet
+                memcpy(ctx->buf + ctx->bytes_received, pkt.data, pkt.dataLen); // copy it into the buffer
+                ctx->bytes_received += pkt.dataLen;                            // increment the data recieved
+                ctx->packet_op = 0;                                            // next packet
 
                 if (ctx->bytes_received >= ctx->image_size) {
                     log_printf("switching to image shutdown state\r\n");
                     next_state(ctx, IMG_SHUTDOWN);
                 } else {
-                    ctx->state_start = now;
                     ctx->last_try = now;
                 }
             } else {
+                // as we failed to get the packet switch to requesting a resend of packet
                 ctx->packet_op = 1;
             }
         }
@@ -104,7 +106,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
     case IMG_SHUTDOWN:
         if (havent_timeout_yet(ctx, now) && camera_query_shutdown() == SPI_RESP_OK) {
             log_printf("switching to state image done\r\n");
-            next_state(ctx, IMG_DONE);
+            next_state(ctx, IMG_DONE); // image shutdown success, end take image command
         }
         break;
 
@@ -123,8 +125,10 @@ bool take_image(uint8_t *img_buf, uint16_t img_buffer_size, uint16_t *bytes_reci
 
     log_printf("Starting Image Request\r\n");
 
+    // setup context struct to start request
     take_image_start(&img_ctx, params, img_buf, img_buffer_size);
     while (1) {
+        // run the state machine
         if (take_image_tick(&img_ctx)) {
             if (img_ctx.state == IMG_DONE) {
                 *bytes_recieved = img_ctx.bytes_received;

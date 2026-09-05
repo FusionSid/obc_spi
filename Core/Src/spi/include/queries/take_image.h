@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define TAKE_IMG_RETRY_MS 5000u
-#define TAKE_IMG_TIMEOUT_MS 30000u
+#define TAKE_IMG_RETRY_MS 10000u
+#define TAKE_IMG_TIMEOUT_MS 120000u
 
 typedef enum {
     IMG_IDLE = 0,

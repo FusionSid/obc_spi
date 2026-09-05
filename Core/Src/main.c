@@ -347,6 +347,7 @@ void StartDefaultTask(void *argument) {
         take_image(buffer, sizeof(buffer), &buffer_size, &params);
         log_printf("Image Recieved:\r\n");
         log_as_bytes(buffer, buffer_size);
+        osDelay(60000);
     }
     /* USER CODE END 5 */
 }
