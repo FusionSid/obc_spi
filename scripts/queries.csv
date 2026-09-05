@@ -1,17 +1,37 @@
-payload  , query_code, command         , inputs             , outputs               , notes
-THERMAL  , 0x01      , ACKNOWLEDGE     , None               , u8 ack                , 
-THERMAL  , 0x02      , ECHO            , u8[0..=676] data   , u8[0..=676] data      , echo query
-THERMAL  , 0x03      , RTD_DATA        , None               , u16[4] value          , 
-RADIATION, 0x01      , ACKNOWLEDGE     , None               , u8 ack                , 
-RADIATION, 0x02      , ECHO            , u8[0..=4090] data  , u8[0..=4090] data     , echo query
-RADIATION, 0x03      , EVENT_TIMESTAMPS, None               , u32[0..=10] timestamps, dequeues up to 10 timestamps
-RADIATION, 0x04      , ADC_VALUE       , None               , u16 value             , 
-CAMERA   , 0x00      , HANDSHAKE       , None               , None                  , To get the pi going
-CAMERA   , 0x01      , HEALTH_CHECK    , None               , u8 status             , See receive state machine
-CAMERA   , 0x02      , IMG_PARAMS      , "u8 cam_chosen
-                                         u16 width
-                                         u16 height
-                                         u8 quality"        , None                  , "Cam chosen is 0 or 1, width and height in pixels, quality in percentage."
-CAMERA   , 0x03      , GET_SIZE        , None               , u16 image_size        , 
-CAMERA   , 0x04      , GET_PACKET      , u8 packet_operation, u8[0..=4000] data     , "0 = get next packet, 1 = resend packet"
-CAMERA   , 0x05      , SHUTDOWN        , None               , None                  , Pi will shut itself down before OBC shuts down whole payload
+payload,query_code,command,inputs,outputs,notes
+THERMAL,0x01,ACKNOWLEDGE,None,u8 ack,
+THERMAL,0x02,ECHO,u8[0..=676] data,u8[0..=676] data,echo query
+THERMAL,0x03,RTD_DATA,None,u16[4] value,
+RADIATION,0x01,HEALTH_CHECK,None,bool health,
+RADIATION,0x02,ECHO,u8[0..=4090] data,u8[0..=4090] data,echo query
+RADIATION,0x03,TIMESTAMP_RAD_DATA,None,"u16 year
+u8 month
+u8 day
+u8 hour
+u8 minute
+u8 second",dequeues up to 10 timestamps
+RADIATION,0x04,RAW_ADC_DATA,None,u32 adc_raw,
+RADIATION,0x05,READ_TEMP,None,"u32 temperature
+bool i2c_status",
+RADIATION,0x06,READ_EVENT_STATS,None,"u32 event_count
+u32 gamma_event_count
+u32 alpha_event_count
+u32 beta_event_count
+",
+RADIATION,0x07,SET_SCHMITT_CALIBRATION,"u32 VTH_Rise
+u32 VTL_Rise
+u32 VTH_Fall
+u32 VTL_Fall","u32 VTH_Rise
+u32 VTL_Rise
+u32 VTH_Fall
+u32 VTL_Fall",
+RADIATION,0x08,LOG_EVENT,None,bool succesful_logging,
+CAMERA,0x00,HANDSHAKE,None,None,To get the pi going
+CAMERA,0x01,HEALTH_CHECK,None,u8 status,See receive state machine
+CAMERA,0x02,IMG_PARAMS,"u8 cam_chosen
+u16 width
+u16 height
+u8 quality",None,"Cam chosen is 0 or 1, width and height in pixels, quality in percentage."
+CAMERA,0x03,GET_SIZE,None,u16 image_size,
+CAMERA,0x04,GET_PACKET,u8 packet_operation,u8[0..=4000] data,"0 = get next packet, 1 = resend packet"
+CAMERA,0x05,SHUTDOWN,None,None,Pi will shut itself down before OBC shuts down whole payload

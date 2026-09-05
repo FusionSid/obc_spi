@@ -13,10 +13,14 @@ typedef enum {
     X(SPI_THERMAL_QUERY_RTD_DATA, 3)
 
 #define SPI_RADIATION_QUERY_LIST                                                                                       \
-    X(SPI_RADIATION_QUERY_ACKNOWLEDGE, 1)                                                                              \
+    X(SPI_RADIATION_QUERY_HEALTH_CHECK, 1)                                                                             \
     X(SPI_RADIATION_QUERY_ECHO, 2)                                                                                     \
-    X(SPI_RADIATION_QUERY_EVENT_TIMESTAMPS, 3)                                                                         \
-    X(SPI_RADIATION_QUERY_ADC_VALUE, 4)
+    X(SPI_RADIATION_QUERY_TIMESTAMP_RAD_DATA, 3)                                                                       \
+    X(SPI_RADIATION_QUERY_RAW_ADC_DATA, 4)                                                                             \
+    X(SPI_RADIATION_QUERY_READ_TEMP, 5)                                                                                \
+    X(SPI_RADIATION_QUERY_READ_EVENT_STATS, 6)                                                                         \
+    X(SPI_RADIATION_QUERY_SET_SCHMITT_CALIBRATION, 7)                                                                  \
+    X(SPI_RADIATION_QUERY_LOG_EVENT, 8)
 
 #define SPI_CAMERA_QUERY_LIST                                                                                          \
     X(SPI_CAMERA_QUERY_HANDSHAKE, 0)                                                                                   \
