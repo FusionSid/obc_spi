@@ -278,7 +278,7 @@ void StartDefaultTask(void *argument) {
             {
                 .cs =
                     {
-                        .cs_pin =CHIP_SELECT_Pin ,
+                        .cs_pin = CHIP_SELECT_Pin,
                         .cs_port = CHIP_SELECT_GPIO_Port,
                     },
                 .start_byte_timeout_ms = 500,
@@ -345,6 +345,8 @@ void StartDefaultTask(void *argument) {
         };
         uint16_t buffer_size;
         take_image(buffer, sizeof(buffer), &buffer_size, &params);
+        log_printf("Image Recieved:\r\n");
+        log_as_bytes(buffer, buffer_size);
     }
     /* USER CODE END 5 */
 }
