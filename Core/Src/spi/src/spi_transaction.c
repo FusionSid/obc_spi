@@ -1,11 +1,10 @@
 #include "spi_transaction.h"
-#include "log.h"
 #include "cmsis_os2.h"
 #include <stdbool.h>
 #include <string.h>
 
 #define SPI_REQ_QUEUE_LEN 8
-#define SPI_TASK_STACK_SIZE 3072 
+#define SPI_TASK_STACK_SIZE 3072
 #define SPI_TASK_PRIORITY osPriorityNormal
 
 #define WORKER_EVENT_RX_DONE (1UL << 0)
@@ -187,26 +186,21 @@ static spi_response_code_t spi_execute(internal_spi_request_t *req) {
 }
 
 spi_status_t spi_service_init(const spi_device_config_t *device_table, uint8_t device_count) {
-    log_printf("hi\r\n");
     if (device_table == NULL || device_count == 0) {
         return SPI_ERR_INVALID_ARGS;
     }
-    log_printf("hi2\r\n");
-    
+
     for (uint8_t i = 1; i < device_count; i++) {
         if (!device_table[i].enabled) {
             continue;
         }
-        log_printf("hi3\r\n");
         spi_hal_cs_init(&device_table[i].cs);
     }
-    
-    log_printf("hi4\r\n");
+
     if (spi_hal_init(spi_fsm_on_tx_complete_it, spi_fsm_on_rx_complete_it, spi_fsm_on_error_it) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
-    
-    log_printf("hi5\r\n");
+
     SPI_HandleTypeDef *hspi = spi_hal_get_handle();
 
     s_hspi = hspi;
@@ -216,12 +210,12 @@ spi_status_t spi_service_init(const spi_device_config_t *device_table, uint8_t d
     if (spi_fsm_init(hspi) != SPI_WORKED) {
         return SPI_ERR_HAL;
     }
-log_printf("hi6\r\n");
+
     s_spi_req_queue = osMessageQueueNew(SPI_REQ_QUEUE_LEN, sizeof(internal_spi_request_t), NULL);
     if (s_spi_req_queue == NULL) {
         return SPI_ERR_HAL;
     }
-log_printf("hi7\r\n");
+
     const osThreadAttr_t task_attr = {
         .name = "spi_task",
         .stack_size = SPI_TASK_STACK_SIZE,
@@ -234,6 +228,6 @@ log_printf("hi7\r\n");
         s_spi_req_queue = NULL;
         return SPI_ERR_HAL;
     }
-log_printf("hi8\r\n");
+
     return SPI_WORKED;
 }

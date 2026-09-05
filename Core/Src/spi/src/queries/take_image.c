@@ -131,6 +131,7 @@ bool take_image(uint8_t *img_buf, uint16_t img_buffer_size, uint16_t *bytes_reci
                 log_printf("Image Request Completed Successfully\r\n");
                 return true;
             }
+            *bytes_recieved = 0;
             log_printf("Image Request not completed successfully :(\r\n");
             return false;
         }
