@@ -315,27 +315,27 @@ void StartDefaultTask(void *argument) {
 
     /* Infinite loop */
     for (;;) {
-        thermal_acknowledge_outputs_t ack_data = {0};
-        log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_acknowledge(&ack_data)));
-        log_printf("Data: %i\r\n", ack_data.ack);
-        osDelay(500);
+        // thermal_acknowledge_outputs_t ack_data = {0};
+        // log_printf("SENDING ACK, Code: %s\r\n", spi_response_code_to_string(thermal_query_acknowledge(&ack_data)));
+        // log_printf("Data: %i\r\n", ack_data.ack);
+        // osDelay(500);
 
-        uint8_t data_to_send[] = {67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-                                  67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-                                  67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
-                                  67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67};
-        thermal_echo_inputs_t inputs = {.dataLen = sizeof(data_to_send) / sizeof(data_to_send[0])};
-        memcpy(inputs.data, data_to_send, inputs.dataLen);
-        thermal_echo_outputs_t outputs = {0};
-        log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo(&inputs, &outputs)));
-        log_as_bytes(outputs.data, outputs.dataLen);
-        osDelay(500);
+        // uint8_t data_to_send[] = {67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        //                           67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        //                           67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67,
+        //                           67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67};
+        // thermal_echo_inputs_t inputs = {.dataLen = sizeof(data_to_send) / sizeof(data_to_send[0])};
+        // memcpy(inputs.data, data_to_send, inputs.dataLen);
+        // thermal_echo_outputs_t outputs = {0};
+        // log_printf("SENDING ECHO, Code: %s\r\n", spi_response_code_to_string(thermal_query_echo(&inputs, &outputs)));
+        // log_as_bytes(outputs.data, outputs.dataLen);
+        // osDelay(500);
 
-        thermal_rtd_data_outputs_t rtd_data = {0};
-        log_printf("SENDING GET RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_rtd_data(&rtd_data)));
-        log_printf("Data: %li %li %li %li\r\n", rtd_data.value[0], rtd_data.value[1], rtd_data.value[2],
-                   rtd_data.value[3]);
-        osDelay(500);
+        // thermal_rtd_data_outputs_t rtd_data = {0};
+        // log_printf("SENDING GET RTD, Code: %s\r\n", spi_response_code_to_string(thermal_query_rtd_data(&rtd_data)));
+        // log_printf("Data: %li %li %li %li\r\n", rtd_data.value[0], rtd_data.value[1], rtd_data.value[2],
+        //            rtd_data.value[3]);
+        // osDelay(500);
 
         camera_img_params_inputs_t params = {
             .cam_chosen = 0,

@@ -1,4 +1,5 @@
 #include "queries/take_image.h"
+#include "log.h"
 #include "main.h"
 #include <string.h>
 
@@ -15,6 +16,7 @@ static void take_image_start(take_image_ctx_t *ctx, const camera_img_params_inpu
 static bool havent_timeout_yet(take_image_ctx_t *ctx, uint32_t now) {
     if (now - ctx->state_start > TAKE_IMG_TIMEOUT_MS) {
         ctx->state = IMG_ERROR;
+        log_printf("Timed out the TOTAL request 30s\r\n");
         return false;
     }
 
@@ -39,6 +41,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
 
     case IMG_HANDSHAKE:
         if (havent_timeout_yet(ctx, now) && camera_query_handshake() == SPI_RESP_OK) {
+            log_printf("switching to health check state\r\n");
             next_state(ctx, IMG_HEALTH_CHECK);
         }
         break;
@@ -47,6 +50,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
         if (havent_timeout_yet(ctx, now)) {
             camera_health_check_outputs_t hc;
             if (camera_query_health_check(&hc) == SPI_RESP_OK && hc.status == 0) {
+                log_printf("switching to img params state\r\n");
                 next_state(ctx, IMG_PARAMS);
             }
         }
@@ -54,6 +58,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
 
     case IMG_PARAMS:
         if (havent_timeout_yet(ctx, now) && camera_query_img_params(&ctx->params) == SPI_RESP_OK) {
+            log_printf("switching to get size state\r\n");
             next_state(ctx, IMG_GET_SIZE);
         }
         break;
@@ -65,6 +70,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
                 ctx->image_size = sz.image_size;
                 ctx->bytes_received = 0;
                 ctx->packet_op = 0;
+                log_printf("Switching to get packet state\r\n");
                 next_state(ctx, IMG_GET_PACKET);
             }
         }
@@ -75,6 +81,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
             camera_get_packet_inputs_t req = {.packet_operation = ctx->packet_op};
             static camera_get_packet_outputs_t pkt;
 
+            log_printf("Requesting Packet, Packet Op: %i\r\n", ctx->packet_op);
             if (camera_query_get_packet(&req, &pkt) == SPI_RESP_OK && pkt.dataLen > 0 &&
                 ctx->bytes_received + pkt.dataLen <= ctx->buf_cap) {
                 memcpy(ctx->buf + ctx->bytes_received, pkt.data, pkt.dataLen);
@@ -82,6 +89,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
                 ctx->packet_op = 0;
 
                 if (ctx->bytes_received >= ctx->image_size) {
+                    log_printf("switching to image shutdown state\r\n");
                     next_state(ctx, IMG_SHUTDOWN);
                 } else {
                     ctx->state_start = now;
@@ -95,6 +103,7 @@ static bool take_image_tick(take_image_ctx_t *ctx) {
 
     case IMG_SHUTDOWN:
         if (havent_timeout_yet(ctx, now) && camera_query_shutdown() == SPI_RESP_OK) {
+            log_printf("switching to state image done\r\n");
             next_state(ctx, IMG_DONE);
         }
         break;
@@ -112,13 +121,17 @@ bool take_image(uint8_t *img_buf, uint16_t img_buffer_size, uint16_t *bytes_reci
                 camera_img_params_inputs_t *params) {
     take_image_ctx_t img_ctx;
 
+    log_printf("Starting Image Request\r\n");
+
     take_image_start(&img_ctx, params, img_buf, img_buffer_size);
     while (1) {
         if (take_image_tick(&img_ctx)) {
             if (img_ctx.state == IMG_DONE) {
                 *bytes_recieved = img_ctx.bytes_received;
+                log_printf("Image Request Completed Successfully\r\n");
                 return true;
             }
+            log_printf("Image Request not completed successfully :(\r\n");
             return false;
         }
     }
