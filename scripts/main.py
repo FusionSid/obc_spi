@@ -1,21 +1,20 @@
-import csv
 import os
 import re
+import csv
+import argparse
 import subprocess
 from typing import Final
 
-from datatypes import payload_c_struct_lines
 from jinja2 import Environment, FileSystemLoader
+
 from query import Query
+from datatypes import payload_c_struct_lines
 
 # this script's code is heavily inspired from apss2's https://github.com/APSS-KESSLER/apss-2-scripts
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(SCRIPT_DIR, "templates")
-CSV_PATH = os.path.join(SCRIPT_DIR, "queries1.csv")
-
-INCLUDE_DIR = os.path.join(SCRIPT_DIR, "..", "Core", "Src", "spi", "include", "queries")
-SRC_DIR = os.path.join(SCRIPT_DIR, "..", "Core", "Src", "spi", "src", "queries")
+DEFAULT_SPI_DIRECTORY = os.path.join(SCRIPT_DIR, "..", "Core", "Src", "spi")
 
 PAYLOAD_IDS: Final = {
     "THERMAL": 1,
@@ -24,11 +23,11 @@ PAYLOAD_IDS: Final = {
 }
 
 
-def load_queries() -> dict[str, list[Query]]:
+def load_queries(input_file: str) -> dict[str, list[Query]]:
     queries: dict[str, list[Query]] = {p: [] for p in PAYLOAD_IDS}
     seen_codes: dict[str, set[int]] = {p: set() for p in PAYLOAD_IDS}
 
-    with open(CSV_PATH, newline="") as f:
+    with open(input_file, newline="") as f:
         for line_num, row in enumerate(csv.DictReader(f), start=2):
             payload = row["payload"].strip().upper()
             if payload not in PAYLOAD_IDS:
@@ -141,11 +140,11 @@ def _merge_includes(old_text: str | None) -> str:
 
 
 def create_deserialize_functions(
-    payload: str, queries: list[Query], env: Environment
+    payload: str, queries: list[Query], env: Environment, src_dir: str
 ) -> list[str]:
     written = []
     template = env.get_template("spi_deserialize.c.j2")
-    path = os.path.join(SRC_DIR, f"spi_{payload.lower()}_deserialize.c")
+    path = os.path.join(src_dir, f"spi_{payload.lower()}_deserialize.c")
 
     old_text = None
     if os.path.exists(path):
@@ -175,7 +174,26 @@ def create_deserialize_functions(
 
 
 def main() -> None:
-    queries = load_queries()
+    parser = argparse.ArgumentParser(
+        description="generate spi queries functions apss-3"
+    )
+
+    parser.add_argument("-i", "--input", required=True, help="Path to the input CSV file, containing the queries")
+    parser.add_argument(
+        "-o", "--output", required=False, help="Path to the output spi/ directory"
+    )
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.input):
+        raise ValueError(f"file {args.input} does not even exist")
+
+    spi_dir = DEFAULT_SPI_DIRECTORY if args.output is None else args.output
+
+    src_dir = os.path.join(spi_dir, "src", "queries")
+    include_dir = os.path.join(spi_dir, "include", "queries")
+
+    queries = load_queries(args.input)
 
     env = Environment(
         loader=FileSystemLoader(TEMPLATES_DIR),
@@ -191,7 +209,7 @@ def main() -> None:
     query_h = env.get_template("spi_query.h.j2").render(
         queries=queries, payload_order=list(PAYLOAD_IDS.keys()), payload_ids=PAYLOAD_IDS
     )
-    p = os.path.join(INCLUDE_DIR, "..", "spi_query.h")
+    p = os.path.join(include_dir, "..", "spi_query.h")
     write_file(p, query_h)
     written_paths.append(p)
 
@@ -201,18 +219,18 @@ def main() -> None:
         header = env.get_template("spi_generated.h.j2").render(
             payload=payload, queries=rows
         )
-        h_path = os.path.join(INCLUDE_DIR, f"spi_{payload.lower()}_generated.h")
+        h_path = os.path.join(include_dir, f"spi_{payload.lower()}_generated.h")
         write_file(h_path, header)
         written_paths.append(h_path)
 
         source = env.get_template("spi_generated.c.j2").render(
             payload=payload, queries=rows
         )
-        c_path = os.path.join(SRC_DIR, f"spi_{payload.lower()}_generated.c")
+        c_path = os.path.join(src_dir, f"spi_{payload.lower()}_generated.c")
         write_file(c_path, source)
         written_paths.append(c_path)
 
-        written_paths += create_deserialize_functions(payload, rows, env)
+        written_paths += create_deserialize_functions(payload, rows, env, src_dir)
 
     subprocess.run(["clang-format", "-i", *written_paths], check=True)
     print("formatted the code with clang format")
