@@ -232,8 +232,11 @@ def main() -> None:
 
         written_paths += create_deserialize_functions(payload, rows, env, src_dir)
 
-    subprocess.run(["clang-format", "-i", *written_paths], check=True)
-    print("formatted the code with clang format")
+    try:
+        subprocess.run(["clang-format", "-i", *written_paths], check=True)
+        print("formatted the code with clang format")
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        print("clang format isn't installed on the system so didn't format")
 
 
 if __name__ == "__main__":
