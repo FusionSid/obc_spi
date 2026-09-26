@@ -5,12 +5,19 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_ROOT/Debug"
 
+# mac stuff
+TOOLCHAIN_BIN=$(find /Applications/STM32CubeIDE.app/Contents/Eclipse/plugins \
+    -maxdepth 1 -iname "com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.*" \
+    -exec echo {}/tools/bin \; | head -n1)
+
+export PATH="$TOOLCHAIN_BIN:$PATH"
+
 build() {
     cd "$BUILD_DIR"
     make -j7 all
 }
 
-compile_db() {
+compile_db() { # so vscode doesnt cry
     cd "$BUILD_DIR"
 
     echo "Regenerating compile_commands.json..."
