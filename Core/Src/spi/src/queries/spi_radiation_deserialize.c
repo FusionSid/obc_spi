@@ -1,109 +1,115 @@
 #include "queries/spi_radiation_generated.h"
 /* USER CODE BEGIN Includes */
+#include <string.h>
+
+static inline uint16_t rd_u16(const uint8_t *b) { return (uint16_t)b[0] | ((uint16_t)b[1] << 8); }
+
+static inline uint32_t rd_u32(const uint8_t *b) {
+    return (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
+}
+
 /* USER CODE END Includes */
 
-#warning "implement HEALTH_CHECK (query 0x01)"
 bool deserialize_radiation_health_check(radiation_health_check_outputs_t *outputs, const uint8_t *buffer,
                                         uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_health_check */
-    // TODO: implement — HEALTH_CHECK (query 0x01)
-    // this must take buffer and unpack into radiation_health_check_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
-
+    if (buffer_len != 1) {
+        return false;
+    }
+    outputs->health = (buffer[0] != 0);
+    return true;
     /* USER CODE END deserialize_radiation_health_check */
 }
 // notes: echo query
-#warning "implement ECHO (query 0x02)"
 bool deserialize_radiation_echo(radiation_echo_outputs_t *outputs, const uint8_t *buffer, uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_echo */
-    // TODO: implement — ECHO (query 0x02)
-    // this must take buffer and unpack into radiation_echo_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
-
+    if (buffer_len > sizeof(outputs->data)) {
+        return false;
+    }
+    memcpy(outputs->data, buffer, buffer_len);
+    outputs->dataLen = buffer_len;
+    return true;
     /* USER CODE END deserialize_radiation_echo */
 }
 // notes: dequeues up to 10 timestamps
-#warning "implement TIMESTAMP_RAD_DATA (query 0x03)"
 bool deserialize_radiation_timestamp_rad_data(radiation_timestamp_rad_data_outputs_t *outputs, const uint8_t *buffer,
                                               uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_timestamp_rad_data */
-    // TODO: implement — TIMESTAMP_RAD_DATA (query 0x03)
-    // this must take buffer and unpack into radiation_timestamp_rad_data_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
-
+    if (buffer_len != 7) {
+        return false;
+    }
+    outputs->year = rd_u16(&buffer[0]);
+    outputs->month = buffer[2];
+    outputs->day = buffer[3];
+    outputs->hour = buffer[4];
+    outputs->minute = buffer[5];
+    outputs->second = buffer[6];
+    return true;
     /* USER CODE END deserialize_radiation_timestamp_rad_data */
 }
-#warning "implement RAW_ADC_DATA (query 0x04)"
 bool deserialize_radiation_raw_adc_data(radiation_raw_adc_data_outputs_t *outputs, const uint8_t *buffer,
                                         uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_raw_adc_data */
-    // TODO: implement — RAW_ADC_DATA (query 0x04)
-    // this must take buffer and unpack into radiation_raw_adc_data_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
-
+    if (buffer_len == 2) {
+        outputs->adc_raw = rd_u16(buffer);
+    } else if (buffer_len == 4) {
+        outputs->adc_raw = rd_u32(buffer);
+    } else {
+        return false;
+    }
+    return true;
     /* USER CODE END deserialize_radiation_raw_adc_data */
 }
-#warning "implement READ_TEMP (query 0x05)"
 bool deserialize_radiation_read_temp(radiation_read_temp_outputs_t *outputs, const uint8_t *buffer,
                                      uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_read_temp */
-    // TODO: implement — READ_TEMP (query 0x05)
-    // this must take buffer and unpack into radiation_read_temp_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
+    if (buffer_len == 1) {
+        outputs->temperature = 0;
+        outputs->i2c_status = false;
+        return true;
+    }
+    if (buffer_len != 5) {
+        return false;
+    }
 
+    outputs->temperature = (uint32_t)(int32_t)(int16_t)rd_u16(&buffer[2]);
+    outputs->i2c_status = (buffer[4] == 0);
+    return true;
     /* USER CODE END deserialize_radiation_read_temp */
 }
-#warning "implement READ_EVENT_STATS (query 0x06)"
 bool deserialize_radiation_read_event_stats(radiation_read_event_stats_outputs_t *outputs, const uint8_t *buffer,
                                             uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_read_event_stats */
-    // TODO: implement — READ_EVENT_STATS (query 0x06)
-    // this must take buffer and unpack into radiation_read_event_stats_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
-
+    if (buffer_len != 16) {
+        return false;
+    }
+    outputs->event_count = rd_u32(&buffer[0]);
+    outputs->gamma_event_count = rd_u32(&buffer[4]);
+    outputs->alpha_event_count = rd_u32(&buffer[8]);
+    outputs->beta_event_count = rd_u32(&buffer[12]);
+    return true;
     /* USER CODE END deserialize_radiation_read_event_stats */
 }
-#warning "implement SET_SCHMITT_CALIBRATION (query 0x07)"
 bool deserialize_radiation_set_schmitt_calibration(radiation_set_schmitt_calibration_outputs_t *outputs,
                                                    const uint8_t *buffer, uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_set_schmitt_calibration */
-    // TODO: implement — SET_SCHMITT_CALIBRATION (query 0x07)
-    // this must take buffer and unpack into radiation_set_schmitt_calibration_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
-
+    if (buffer_len != 16) {
+        return false;
+    }
+    outputs->VTH_Rise = rd_u32(&buffer[0]);
+    outputs->VTL_Rise = rd_u32(&buffer[4]);
+    outputs->VTH_Fall = rd_u32(&buffer[8]);
+    outputs->VTL_Fall = rd_u32(&buffer[12]);
+    return true;
     /* USER CODE END deserialize_radiation_set_schmitt_calibration */
 }
-#warning "implement LOG_EVENT (query 0x08)"
 bool deserialize_radiation_log_event(radiation_log_event_outputs_t *outputs, const uint8_t *buffer,
                                      uint16_t buffer_len) {
     /* USER CODE BEGIN deserialize_radiation_log_event */
-    // TODO: implement — LOG_EVENT (query 0x08)
-    // this must take buffer and unpack into radiation_log_event_outputs_t.
-    (void)outputs;
-    (void)buffer;
-    (void)buffer_len;
-    return false;
-
+    if (buffer_len != 1) {
+        return false;
+    }
+    outputs->succesful_logging = (buffer[0] != 0);
+    return true;
     /* USER CODE END deserialize_radiation_log_event */
 }
